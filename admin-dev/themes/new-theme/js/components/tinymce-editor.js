@@ -23,9 +23,10 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
 import ComponentsMap from '@components/components-map';
-import {EventEmitter} from './event-emitter';
 /* // TODO <cnc-modifica> - TinyMCEEditor -  */
 import Router from '@components/router';
+import {EventEmitter} from './event-emitter';
+
 const {$} = window;
 
 /**
@@ -167,16 +168,21 @@ class TinyMCEEditor {
         text: '',
         icon: 'link',
         title: 'Internal link',
-        onclick () {
+        onclick() {
           $.ajax({
             type: 'POST',
             url: allCmsRoute,
             success(data) {
-              const values = [];
-              $.each(data, function (index, cms) {
-                values.push({ text: cms.meta_title, value: cms.id_cms})
-              })
-
+              const pages = [];
+              $.each(data, (index, cms) => {
+                pages.push({text: cms.meta_title, value: cms.id_cms});
+              });
+            /**
+             * // TODO <cnc-modifica> - TinyMCEEditor::setupEditor() - Da migliorare:
+             * bisogna far selezionare quale entity utilizzare: CMSCategory, Product, Category, Manufacturer 
+             * In base all'entity va eseguita una ricerca, forse per nome.
+             * Quindi penso che va creato un controller dedicato alla ricerca delle entity
+             */
               editor.windowManager.open({
                 title: 'Aggiungi link interno',
                 body: [
@@ -190,24 +196,24 @@ class TinyMCEEditor {
                     type: 'listbox',
                     name: 'pageId',
                     label: 'Page',
-                    values: values,
+                    values: {values},
                   }
                 ],
-                onsubmit: function (e) {
-                  let text = e.data.text;
-                  const pageId = e.data.pageId;
+                onsubmit(e) {
+                  let {text} = e.data;
+                  const {pageId} = e.data;
 
                   if (!text) {
-                    text = 'NAME_CMS_ID=' + pageId
+                    text = `NAME_CMS_ID=${pageId}`;
                   }
 
-                  editor.insertContent('<a href="URL_CMS_ID=' + pageId + '">' + text + '</a>');
-                }
+                  editor.insertContent(`<a href="URL_CMS_ID=${pageId}">${text}</a>`);
+                },
               });
             },
             dataType: 'json',
           });
-        }
+        },
       });
     }
     /* ****************************************************** */

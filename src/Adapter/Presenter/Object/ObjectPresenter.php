@@ -26,6 +26,8 @@
 
 namespace PrestaShop\PrestaShop\Adapter\Presenter\Object;
 
+use CMS;
+use Context;
 use Exception;
 use Hook;
 use ObjectModel;
@@ -52,6 +54,14 @@ class ObjectPresenter implements PresenterInterface
         foreach ($fields as $fieldName => $null) {
             $presentedObject[$fieldName] = $object->{$fieldName};
         }
+
+        // TODO <cnc> - ObjectPresenter::present() - modifica per rendere generale gli shortcodes
+        switch (get_class($object)) {
+            case 'CMS':
+                $presentedObject['content'] = $this->processShortcodes($presentedObject['content']);
+                break;
+        }
+        // ********************************************************
 
         $presentedObject['id'] = $object->id;
 
@@ -92,5 +102,37 @@ class ObjectPresenter implements PresenterInterface
                 $presentedObject = $filteredHtml['object'];
             }
         }
+    }
+
+    private function processShortcodes($content): string
+    {// TODO <cnc> - ObjectPresenter::processShortcodes() - - modifica per rendere generale gli shortcodes
+        /** @var Context $context */
+        $context = Context::getContext();
+        $pattern = '/(URL_CMS_ID|NAME_CMS_ID)=(\d+)/';
+
+        preg_match_all($pattern, $content, $cmsIds);
+
+        $content = preg_replace_callback($pattern, function ($matches) use ($context) {
+            /**
+             * // TODO <cnc-modifica> - ObjectPresenter::processShortcodes() - DA MIGLIORARE:
+             * - qui bisognerebbe non caricare ogni volta il CMS
+             * - oltre all'entity CMS potrebbe essere anche:
+             *      - CMSCategory
+             *      - Product
+             *      - Category
+             *      - Manufacturer
+             */
+            $cms = new CMS((int) $matches[2], $context->language->id);
+
+            if ($matches[1] == 'NAME_CMS_ID') {
+                $value = $cms->meta_title;
+            } else {
+                $value = $context->link->getCMSLink($cms);
+            }
+
+            return $value;
+        }, $content);
+
+        return $content;
     }
 }
