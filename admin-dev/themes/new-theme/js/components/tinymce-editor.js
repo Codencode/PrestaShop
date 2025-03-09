@@ -169,49 +169,51 @@ class TinyMCEEditor {
         icon: 'link',
         title: 'Internal link',
         onclick() {
-          $.ajax({
-            type: 'POST',
-            url: allCmsRoute,
-            success(data) {
-              const pages = [];
-              $.each(data, (index, cms) => {
-                pages.push({text: cms.meta_title, value: cms.id_cms});
-              });
-            /**
-             * // TODO <cnc-modifica> - TinyMCEEditor::setupEditor() - Da migliorare:
-             * bisogna far selezionare quale entity utilizzare: CMSCategory, Product, Category, Manufacturer 
-             * In base all'entity va eseguita una ricerca, forse per nome.
-             * Quindi penso che va creato un controller dedicato alla ricerca delle entity
-             */
-              editor.windowManager.open({
-                title: 'Aggiungi link interno',
-                body: [
-                  {
-                    type: 'textbox',
-                    name: 'text',
-                    label: 'Text to display',
-                    value: '',
-                  },
-                  {
-                    type: 'listbox',
-                    name: 'pageId',
-                    label: 'Page',
-                    values: {values},
-                  }
-                ],
-                onsubmit(e) {
-                  let {text} = e.data;
-                  const {pageId} = e.data;
-
-                  if (!text) {
-                    text = `NAME_CMS_ID=${pageId}`;
-                  }
-
-                  editor.insertContent(`<a href="URL_CMS_ID=${pageId}">${text}</a>`);
+          editor.windowManager.open({
+            title: 'Aggiungi link interno',
+            body: [
+              {
+                type: 'listbox',
+                name: 'pageId',
+                label: 'Entity',
+                values: [{
+                  text: 'Product',
+                  value: 'Product',
                 },
-              });
+                {
+                  text: 'Category',
+                  value: 'Category',
+                },
+                {
+                  text: 'Cms',
+                  value: 'CMS',
+                },
+                {
+                  text: 'Cms Category',
+                  value: 'CMSCategory',
+                }],
+              },
+              {
+                type: 'textbox',
+                name: 'string_to_search',
+                label: 'Search',
+                value: '',
+              },
+              /**
+               * //TODO <cnc> >>>>>>>>>>>>>>>>>> SONO ARRIVATO QUI: devo eseguire la ricerca mediante un evento
+               * impostato sul campo "strign_to_search" in base all'entity selezionata
+               */
+            ],
+            onsubmit(e) {
+              let {text} = e.data;
+              const {pageId} = e.data;
+
+              if (!text) {
+                text = `NAME_CMS_ID=${pageId}`;
+              }
+
+              editor.insertContent(`<a href="URL_CMS_ID=${pageId}">${text}</a>`);
             },
-            dataType: 'json',
           });
         },
       });
