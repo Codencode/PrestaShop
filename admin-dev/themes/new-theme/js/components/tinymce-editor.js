@@ -202,29 +202,59 @@ class TinyMCEEditor {
                 name: 'string_to_search',
                 label: 'Search',
                 value: '',
-                onPostRender: function () {
+                onkeyup: function () {
                 //TODO <cnc> aggiunta componente "EntitySearchInput"
+                console.clear();
                     /**
-                   * //TODO <cnc> >>>>>>>>>>>>>>>>>> SONO ARRIVATO QUI: devo impostare l'attributo 'data-remote-url' per l'input "string_to_search"
-                   * poi devo vedere se funziona l'autocomplete che ho preso dal file "related-products-manager.ts"
+                   * //TODO <cnc> >>>>>>>>>>>>>>>>>> SONO ARRIVATO QUI: devo aggiornare la select con i risultati ricevuti in ajax (attenzione attualmente ricevo le pagine CMS)
+                   * N.B.
+                   * Bisogna capire se implementare gli shortcodes anche nei prodotti, per il problema che ho spiegato qui: "https://github.com/PrestaShop/PrestaShop/pull/38212#issuecomment-2710963642"
                      */
-                  console.clear();
-                  this.getEl().setAttribute('data-remote-url', allCmsRoute);
-                  this.getEl().setAttribute('placeholder', allCmsRoute);
-                  console.log(this.getEl())
-                  console.log($(this.getEl()))
+                    
+                    /*
+                    this.getEl().setAttribute('data-remote-url', allCmsRoute);
+                    this.getEl().setAttribute('placeholder', allCmsRoute);
+                    console.log(this.getEl())
+                    console.log($(this.getEl()))
+                    */
+                  const searchValue = this.value().trim();
+                  var win = editor.windowManager.getWindows()[0]; // Ottieni la finestra
+                  var resultsListbox = win.find('search_results')[0]; // Trova il listbox
 
-                  const entitySearchInput = new EntitySearchInput($(this.getEl()), {
-                    //allowDelete: initialAllowDelete,
-                    onRemovedContent: () => {
-                      //this.eventEmitter.emit(ProductEventMap.updateSubmitButtonState);
-                    },
-                    onSelectedContent: () => {
-                      alert("OK");
-                      //this.eventEmitter.emit(ProductEventMap.updateSubmitButtonState);
-                    },
-                  });
+                  console.log(win)
+
+
+                  if (searchValue.length >= 3) {
+                    $.ajax({
+                      type: "POST",
+                      url : allCmsRoute,
+                      async: false,
+                      dataType: 'json',
+                      data : {
+                        search_value : searchValue
+                      },
+                      success : function(data) {
+                       console.log(data)
+                       // Pulisce le opzioni precedenti
+                      resultsListbox.items().splice(0, resultsListbox.items().length);
+      
+                       /*
+                       data.forEach(item => {
+                         resultsListbox.items().push({ text: item.text, value: item.value });
+                       });
+                       */
+                       resultsListbox.items().push({ text: "aaaaa", value: "aaaaa" });
+
+                      },
+                    });
+                  }
                 }
+              },
+              {
+                type: 'listbox',
+                name: 'search_result',
+                label: 'Results',
+                values: [],
               },
             ],
             onsubmit(e) {
