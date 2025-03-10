@@ -25,6 +25,10 @@
 import ComponentsMap from '@components/components-map';
 /* // TODO <cnc-modifica> - TinyMCEEditor -  */
 import Router from '@components/router';
+
+/* // TODO <cnc> aggiunta componente "EntitySearchInput" -  */
+import EntitySearchInput from '@components/entity-search-input';
+
 import {EventEmitter} from './event-emitter';
 
 const {$} = window;
@@ -198,11 +202,30 @@ class TinyMCEEditor {
                 name: 'string_to_search',
                 label: 'Search',
                 value: '',
+                onPostRender: function () {
+                //TODO <cnc> aggiunta componente "EntitySearchInput"
+                    /**
+                   * //TODO <cnc> >>>>>>>>>>>>>>>>>> SONO ARRIVATO QUI: devo impostare l'attributo 'data-remote-url' per l'input "string_to_search"
+                   * poi devo vedere se funziona l'autocomplete che ho preso dal file "related-products-manager.ts"
+                     */
+                  console.clear();
+                  this.getEl().setAttribute('data-remote-url', allCmsRoute);
+                  this.getEl().setAttribute('placeholder', allCmsRoute);
+                  console.log(this.getEl())
+                  console.log($(this.getEl()))
+
+                  const entitySearchInput = new EntitySearchInput($(this.getEl()), {
+                    //allowDelete: initialAllowDelete,
+                    onRemovedContent: () => {
+                      //this.eventEmitter.emit(ProductEventMap.updateSubmitButtonState);
+                    },
+                    onSelectedContent: () => {
+                      alert("OK");
+                      //this.eventEmitter.emit(ProductEventMap.updateSubmitButtonState);
+                    },
+                  });
+                }
               },
-              /**
-               * //TODO <cnc> >>>>>>>>>>>>>>>>>> SONO ARRIVATO QUI: devo eseguire la ricerca mediante un evento
-               * impostato sul campo "strign_to_search" in base all'entity selezionata
-               */
             ],
             onsubmit(e) {
               let {text} = e.data;
