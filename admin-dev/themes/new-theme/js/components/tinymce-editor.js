@@ -29,9 +29,9 @@ import Router from '@components/router';
 /* // TODO <cnc> aggiunta componente "EntitySearchInput" -  */
 import EntitySearchInput from '@components/entity-search-input';
 
-import {EventEmitter} from './event-emitter';
+import { EventEmitter } from './event-emitter';
 
-const {$} = window;
+const { $ } = window;
 
 /**
  * This class init TinyMCE instances in the back-office. It is wildly inspired by
@@ -119,7 +119,7 @@ class TinyMCEEditor {
       extended_valid_elements: 'em[class|name|id],@[role|data-*|aria-*]',
       valid_children: '+*[*]',
       valid_elements: '*[*]',
-      rel_list: [{title: 'nofollow', value: 'nofollow'}],
+      rel_list: [{ title: 'nofollow', value: 'nofollow' }],
       editor_selector: ComponentsMap.tineMceEditor.selectorClass,
       init_instance_callback: () => {
         this.changeToMaterial();
@@ -167,6 +167,8 @@ class TinyMCEEditor {
     /* // TODO <cnc-modifica> - TinyMCEEditor::setupEditor() - Creazione pulsante */
     if (editor.advantageLink) {
       const allCmsRoute = this.router.generate('admin_cms_pages_all_cms');
+
+      var resultsListbox;
       editor.addButton('advantageLink', {
         type: 'button',
         text: '',
@@ -203,48 +205,45 @@ class TinyMCEEditor {
                 label: 'Search',
                 value: '',
                 onkeyup: function () {
-                //TODO <cnc> aggiunta componente "EntitySearchInput"
-                console.clear();
-                    /**
-                   * //TODO <cnc> >>>>>>>>>>>>>>>>>> SONO ARRIVATO QUI: devo aggiornare la select con i risultati ricevuti in ajax (attenzione attualmente ricevo le pagine CMS)
-                   * N.B.
-                   * Bisogna capire se implementare gli shortcodes anche nei prodotti, per il problema che ho spiegato qui: "https://github.com/PrestaShop/PrestaShop/pull/38212#issuecomment-2710963642"
-                     */
-                    
-                    /*
-                    this.getEl().setAttribute('data-remote-url', allCmsRoute);
-                    this.getEl().setAttribute('placeholder', allCmsRoute);
-                    console.log(this.getEl())
-                    console.log($(this.getEl()))
-                    */
+                  //TODO <cnc> aggiunta componente "EntitySearchInput"
+                  console.clear();
+                  /**
+                 * //TODO <cnc> >>>>>>>>>>>>>>>>>> SONO ARRIVATO QUI: devo aggiornare la select con i risultati ricevuti in ajax (attenzione attualmente ricevo le pagine CMS)
+                 * 
+                 * sono riuscito ad aggiornare la select creandone una nuova,
+                 * COSA DEVO FARE:
+                 * devo eseguire la ricerca dell'elemento per tipo di Entity
+                 * N.B.
+                 * Bisogna capire se implementare gli shortcodes anche nei prodotti, per il problema che ho spiegato qui: "https://github.com/PrestaShop/PrestaShop/pull/38212#issuecomment-2710963642"
+                   */
+
+                  const parent = resultsListbox.parent();
                   const searchValue = this.value().trim();
-                  var win = editor.windowManager.getWindows()[0]; // Ottieni la finestra
-                  var resultsListbox = win.find('search_results')[0]; // Trova il listbox
-
-                  console.log(win)
-
 
                   if (searchValue.length >= 3) {
                     $.ajax({
                       type: "POST",
-                      url : allCmsRoute,
-                      async: false,
+                      url: allCmsRoute,
                       dataType: 'json',
-                      data : {
-                        search_value : searchValue
+                      data: {
+                        search_value: searchValue
                       },
-                      success : function(data) {
-                       console.log(data)
-                       // Pulisce le opzioni precedenti
-                      resultsListbox.items().splice(0, resultsListbox.items().length);
-      
-                       /*
-                       data.forEach(item => {
-                         resultsListbox.items().push({ text: item.text, value: item.value });
-                       });
-                       */
-                       resultsListbox.items().push({ text: "aaaaa", value: "aaaaa" });
+                      success: function (data) {
+                        resultsListbox.remove();
 
+                        parent.append({
+                          label: 'Dynamic Listbox',
+                          type: 'listbox',
+                          name: 'listbox',
+                          values: data.map(item => ({
+                            text: item.meta_title,
+                            value: item.id_cms
+                          })),
+                          onPostRender: function () {
+                            resultsListbox = this;
+                            console.log("Listbox pronto:", resultsListbox);
+                          }
+                        });
                       },
                     });
                   }
@@ -254,12 +253,26 @@ class TinyMCEEditor {
                 type: 'listbox',
                 name: 'search_result',
                 label: 'Results',
-                values: [],
+                id: 'search_result',
+                values: [
+                  {
+                    text: "Primo",
+                    value: "primo"
+                  },
+                  {
+                    text: "Secondo",
+                    value: "secondo"
+                  }
+                ],
+                onPostRender: function () {
+                  resultsListbox = this; // Salviamo il riferimento direttamente
+                  console.log("Listbox pronto:", resultsListbox);
+                }
               },
             ],
             onsubmit(e) {
-              let {text} = e.data;
-              const {pageId} = e.data;
+              let { text } = e.data;
+              const { pageId } = e.data;
 
               if (!text) {
                 text = `NAME_CMS_ID=${pageId}`;
