@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -26,8 +27,8 @@
 
 namespace PrestaShopBundle\Controller\Admin\Improve\Design;
 
+use Doctrine\DBAL\Connection;
 use Exception;
-use PrestaShop\PrestaShop\Adapter\CMS\CMSDataProvider;
 use PrestaShop\PrestaShop\Adapter\LegacyContext;
 use PrestaShop\PrestaShop\Adapter\Shop\Url\CmsProvider;
 use PrestaShop\PrestaShop\Core\CMS\CmsPageViewDataProviderInterface;
@@ -480,7 +481,9 @@ class CmsPageController extends PrestaShopAdminController
         $cmsCategoriesToDelete = $request->request->all('cms_page_category_bulk');
 
         try {
-            $cmsCategoriesToDelete = array_map(function ($item) { return (int) $item; }, $cmsCategoriesToDelete);
+            $cmsCategoriesToDelete = array_map(function ($item) {
+                return (int) $item;
+            }, $cmsCategoriesToDelete);
 
             $this->dispatchCommand(
                 new BulkDeleteCmsPageCategoryCommand($cmsCategoriesToDelete)
@@ -515,8 +518,7 @@ class CmsPageController extends PrestaShopAdminController
         PositionDefinition $positionDefinition
     ): RedirectResponse {
         $cmsCategoryParentId = $request->query->getInt('id_cms_category') ?:
-            CmsPageCategoryId::ROOT_CMS_PAGE_CATEGORY_ID
-        ;
+            CmsPageCategoryId::ROOT_CMS_PAGE_CATEGORY_ID;
 
         $positionsData = [
             'positions' => $request->request->all('positions'),
@@ -552,8 +554,7 @@ class CmsPageController extends PrestaShopAdminController
         PositionDefinition $positionDefinition
     ): RedirectResponse {
         $cmsCategoryParentId = $request->query->getInt('id_cms_category') ?:
-            CmsPageCategoryId::ROOT_CMS_PAGE_CATEGORY_ID
-        ;
+            CmsPageCategoryId::ROOT_CMS_PAGE_CATEGORY_ID;
 
         $positionsData = [
             'positions' => $request->request->all('positions'),
@@ -619,7 +620,9 @@ class CmsPageController extends PrestaShopAdminController
     {
         $cmsCategoriesToEnable = $request->request->all('cms_page_category_bulk');
         try {
-            $cmsCategoriesToEnable = array_map(function ($item) { return (int) $item; }, $cmsCategoriesToEnable);
+            $cmsCategoriesToEnable = array_map(function ($item) {
+                return (int) $item;
+            }, $cmsCategoriesToEnable);
 
             $this->dispatchCommand(
                 new BulkEnableCmsPageCategoryCommand($cmsCategoriesToEnable)
@@ -718,7 +721,9 @@ class CmsPageController extends PrestaShopAdminController
         $cmsPagesToDisable = $request->request->all('cms_page_bulk');
 
         try {
-            $cmsPagesToDisable = array_map(function ($item) { return (int) $item; }, $cmsPagesToDisable);
+            $cmsPagesToDisable = array_map(function ($item) {
+                return (int) $item;
+            }, $cmsPagesToDisable);
 
             $this->dispatchCommand(
                 new BulkDisableCmsPageCommand($cmsPagesToDisable)
@@ -1114,14 +1119,81 @@ class CmsPageController extends PrestaShopAdminController
      * @return JsonResponse
      */
     #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
-    public function allCmsAction(
+    public function shortCodesSearchAction(
         #[Autowire(service: 'prestashop.adapter.legacy.context')]
         LegacyContext $context,
-        #[Autowire(service: 'prestashop.adapter.data_provider.cms')]
-        CMSDataProvider $cmsDataProvider,
-    ): JsonResponse {// TODO <cnc-modifica> - CmsPageController::findCmsAction() -
-        $cms = $cmsDataProvider->getCMSPages($context->getContext()->language->id);
+        #[Autowire(service: 'doctrine.dbal.default_connection')]
+        Connection $connection,
+        #[Autowire('%database_prefix%')]
+        string $dbPrefix,
+        Request $request,
+    ): JsonResponse {
+        /**
+         * // TODO <cnc-modifica> - CmsPageController::shortCodesSearchAction() - ATTENZIONE!!!
+         * - questo metodo deve essere implementato in un controller apposito.
+         * - la ricerca andrebbe spostata in un service apposito
+         * - anche il nome della rotta andrebbe spostato e rinominato, attualmente è "admin_shortcodes_search"
+         */
+        $entityType = $request->request->get('entityType');
+        $search = $request->request->get('search');
 
-        return $this->json($cms);
+        $sql = '';
+        $params = [];
+        $params = [
+            'shopId' => (int) $context->getContext()->shop->id,
+            'search' => '%' . $search . '%'
+        ];
+        switch ($entityType) {
+            case 'product':
+                $sql = 'SELECT `name`, ps.`id_product` AS `id`
+                        FROM ' . $dbPrefix . 'product p
+                        INNER JOIN ' . $dbPrefix . 'product_shop ps ON ps.id_product = p.id_product
+                        INNER JOIN ' . $dbPrefix . 'product_lang pl ON pl.id_product = ps.id_product
+                        WHERE (`name` LIKE :search OR p.`reference` LIKE :search)
+                        AND ps.`id_shop` = :shopId
+                        AND pl.`id_shop` = :shopId
+                        AND pl.`id_lang` = :langId';
+                $params['langId'] = (int) $context->getContext()->language->id;
+                break;
+            case 'category':
+                $sql = 'SELECT `name`, cs.`id_category` AS `id`
+                        FROM ' . $dbPrefix . 'category_shop cs
+                        INNER JOIN ' . $dbPrefix . 'category_lang cl ON cl.id_category = cs.id_category
+                        WHERE `name` LIKE :search AND cs.`id_shop` = :shopId
+                        AND cl.`id_shop` = :shopId
+                        AND cl.`id_lang` = :langId';
+                $params['langId'] = (int) $context->getContext()->language->id;
+                break;
+            case 'cms':
+                $sql = 'SELECT `meta_title` AS `name`, cs.`id_cms` AS `id`
+                        FROM ' . $dbPrefix . 'cms_shop cs
+                        INNER JOIN ' . $dbPrefix . 'cms_lang cl ON cl.id_cms = cs.id_cms
+                        WHERE `meta_title` LIKE :search AND cs.`id_shop` = :shopId
+                        AND cl.`id_shop` = :shopId
+                        AND cl.`id_lang` = :langId';
+                $params['langId'] = (int) $context->getContext()->language->id;
+                break;
+            case 'cmsCategory':
+                $sql = 'SELECT `name`, cs.`id_cms_category` AS `id`
+                        FROM ' . $dbPrefix . 'cms_category_shop cs
+                        INNER JOIN ' . $dbPrefix . 'cms_category_lang cl ON cl.id_cms_category = cs.id_cms_category
+                        WHERE `name` LIKE :search AND cs.`id_shop` = :shopId
+                        AND cl.`id_shop` = :shopId
+                        AND cl.`id_lang` = :langId';
+                $params['langId'] = (int) $context->getContext()->language->id;
+                break;
+            case 'manufacturer':
+                $sql = 'SELECT `name`, m.`id_manufacturer` AS `id`
+                        FROM ' . $dbPrefix . 'manufacturer m
+                        INNER JOIN ' . $dbPrefix . 'manufacturer_shop ms ON ms.id_manufacturer = m.id_manufacturer
+                        WHERE `name` LIKE :search AND ms.`id_shop` = :shopId';
+                break;
+        }
+
+        $results = $connection
+            ->executeQuery($sql, $params)
+            ->fetchAllAssociative();
+
+        return $this->json($results);
     }
 }

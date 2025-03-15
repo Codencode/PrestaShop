@@ -166,9 +166,11 @@ class TinyMCEEditor {
   setupEditor(editor) {
     /* // TODO <cnc-modifica> - TinyMCEEditor::setupEditor() - Creazione pulsante */
     if (editor.advantageLink) {
-      const allCmsRoute = this.router.generate('admin_cms_pages_all_cms');
+      const shortCodesSearchRoute = this.router.generate('admin_shortcodes_search');
 
       var resultsListbox;
+      var entityTypeInput;
+      var debounceTimeout;
       editor.addButton('advantageLink', {
         type: 'button',
         text: '',
@@ -180,73 +182,82 @@ class TinyMCEEditor {
             body: [
               {
                 type: 'listbox',
-                name: 'pageId',
+                name: 'entityType',
                 label: 'Entity',
                 values: [{
                   text: 'Product',
-                  value: 'Product',
+                  value: 'product',
                 },
                 {
                   text: 'Category',
-                  value: 'Category',
+                  value: 'category',
                 },
                 {
                   text: 'Cms',
-                  value: 'CMS',
+                  value: 'cms',
                 },
                 {
                   text: 'Cms Category',
-                  value: 'CMSCategory',
+                  value: 'cmsCategory',
+                },
+                {
+                  text: 'Manufacturer',
+                  value: 'manufacturer',
                 }],
+                onPostRender: function () {
+                  entityTypeInput = this;
+                },
               },
               {
                 type: 'textbox',
-                name: 'string_to_search',
+                name: 'search',
                 label: 'Search',
                 value: '',
                 onkeyup: function () {
                   //TODO <cnc> aggiunta componente "EntitySearchInput"
+
+                  if (debounceTimeout) {
+                    clearTimeout(debounceTimeout);
+                  }
                   console.clear();
                   /**
-                 * //TODO <cnc> >>>>>>>>>>>>>>>>>> SONO ARRIVATO QUI: devo aggiornare la select con i risultati ricevuti in ajax (attenzione attualmente ricevo le pagine CMS)
-                 * 
-                 * sono riuscito ad aggiornare la select creandone una nuova,
-                 * COSA DEVO FARE:
-                 * devo eseguire la ricerca dell'elemento per tipo di Entity
+                 *  ho eseguito la chiamata AJAX
                  * N.B.
                  * Bisogna capire se implementare gli shortcodes anche nei prodotti, per il problema che ho spiegato qui: "https://github.com/PrestaShop/PrestaShop/pull/38212#issuecomment-2710963642"
                    */
-
-                  const parent = resultsListbox.parent();
                   const searchValue = this.value().trim();
+                  debounceTimeout = setTimeout(() => {
+                    if (searchValue.length >= 3) {
+                      const parent = resultsListbox.parent();
+                      $.ajax({
+                        type: "POST",
+                        url: shortCodesSearchRoute,
+                        dataType: 'json',
+                        data: {
+                          entityType: entityTypeInput.value(),
+                          search: searchValue
+                        },
+                        success: function (data) {
 
-                  if (searchValue.length >= 3) {
-                    $.ajax({
-                      type: "POST",
-                      url: allCmsRoute,
-                      dataType: 'json',
-                      data: {
-                        search_value: searchValue
-                      },
-                      success: function (data) {
-                        resultsListbox.remove();
+                          console.log(data)
+                          resultsListbox.remove();
 
-                        parent.append({
-                          label: 'Dynamic Listbox',
-                          type: 'listbox',
-                          name: 'listbox',
-                          values: data.map(item => ({
-                            text: item.meta_title,
-                            value: item.id_cms
-                          })),
-                          onPostRender: function () {
-                            resultsListbox = this;
-                            console.log("Listbox pronto:", resultsListbox);
-                          }
-                        });
-                      },
-                    });
-                  }
+                          parent.append({
+                            label: 'Dynamic Listbox',
+                            type: 'listbox',
+                            name: 'listbox',
+                            values: data.map(item => ({
+                              text: item.name,
+                              value: item.id
+                            })),
+                            onPostRender: function () {
+                              resultsListbox = this;
+                            }
+                          });
+                        },
+                      });
+                    }
+                  }, 500)
                 }
               },
               {
@@ -254,25 +265,19 @@ class TinyMCEEditor {
                 name: 'search_result',
                 label: 'Results',
                 id: 'search_result',
-                values: [
-                  {
-                    text: "Primo",
-                    value: "primo"
-                  },
-                  {
-                    text: "Secondo",
-                    value: "secondo"
-                  }
-                ],
+                values: [],
                 onPostRender: function () {
-                  resultsListbox = this; // Salviamo il riferimento direttamente
-                  console.log("Listbox pronto:", resultsListbox);
+                  resultsListbox = this;
                 }
               },
             ],
             onsubmit(e) {
               let { text } = e.data;
               const { pageId } = e.data;
+
+              /**
+               * ////TODO <cnc> >>>>>>>>>>>>>>>>>> SONO ARRIVATO QUI: qui devo inserire uno span con ID e TYPE object
+               */
 
               if (!text) {
                 text = `NAME_CMS_ID=${pageId}`;

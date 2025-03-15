@@ -178,10 +178,12 @@ admin_cms_pages_update_position:
     _legacy_link: AdminCmsContent:updatecms
 
 # // TODO <cnc-modifica> - cms_pages.yml -
-admin_cms_pages_all_cms:
-  path: /all-cms
+admin_shortcodes_search:
+  path: /shortcodes-search
   methods: POST
   defaults:
-    _controller: 'PrestaShopBundle\Controller\Admin\Improve\Design\CmsPageController::allCmsAction'
+    _controller: 'PrestaShopBundle\Controller\Admin\Improve\Design\CmsPageController::shortCodesSearchAction'
     _legacy_controller: AdminCmsContent
     _legacy_link: AdminCmsContent
+  options:
+    expose: true
