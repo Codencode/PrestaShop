@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -26,12 +27,17 @@
 
 namespace PrestaShop\PrestaShop\Adapter\Presenter\Object;
 
+use Category;
 use CMS;
+use CMSCategory;
 use Context;
 use Exception;
 use Hook;
+use Manufacturer;
 use ObjectModel;
 use PrestaShop\PrestaShop\Adapter\Presenter\PresenterInterface;
+use Product;
+use Validate;
 
 class ObjectPresenter implements PresenterInterface
 {
@@ -55,10 +61,19 @@ class ObjectPresenter implements PresenterInterface
             $presentedObject[$fieldName] = $object->{$fieldName};
         }
 
-        // TODO <cnc> - ObjectPresenter::present() - modifica per rendere generale gli shortcodes
+        // TODO <cnc-modifica> - ObjectPresenter::present() - modifica per rendere generale gli shortcodes
         switch (get_class($object)) {
+            case 'Product':
+                $presentedObject['description'] = $this->processShortcodes($presentedObject['description']);
+                break;
+            case 'Category':
+                $presentedObject['description'] = $this->processShortcodes($presentedObject['description']);
+                break;
             case 'CMS':
                 $presentedObject['content'] = $this->processShortcodes($presentedObject['content']);
+                break;
+            case 'Manufacturer':
+                $presentedObject['description'] = $this->processShortcodes($presentedObject['description']);
                 break;
         }
         // ********************************************************
@@ -105,32 +120,69 @@ class ObjectPresenter implements PresenterInterface
     }
 
     private function processShortcodes($content): string
-    {// TODO <cnc> - ObjectPresenter::processShortcodes() - - modifica per rendere generale gli shortcodes
+    { // TODO <cnc-modifica> - ObjectPresenter::processShortcodes() - - modifica per rendere generale gli shortcodes
         /** @var Context $context */
         $context = Context::getContext();
-        $pattern = '/(URL_CMS_ID|NAME_CMS_ID)=(\d+)/';
+        $pattern = '/<span\s+data-entity-type="([^"]+)"\s+data-entity-id="(\d+)"/';
 
-        preg_match_all($pattern, $content, $cmsIds);
+        preg_match_all($pattern, $content, $entitiesIds);
 
         $content = preg_replace_callback($pattern, function ($matches) use ($context) {
             /**
              * // TODO <cnc-modifica> - ObjectPresenter::processShortcodes() - DA MIGLIORARE:
              * - qui bisognerebbe non caricare ogni volta il CMS
-             * - oltre all'entity CMS potrebbe essere anche:
-             *      - CMSCategory
-             *      - Product
-             *      - Category
-             *      - Manufacturer
+             * - questo codice forse andrebbe spostato in un service richiamabile da qualsiasi punto,
+             *   si potrebbe creare un metodo nell'ObjectModel per convertire gli shortcodes
              */
-            $cms = new CMS((int) $matches[2], $context->language->id);
+            $entityType = $matches[1];
+            $entityId = (int) $matches[2];
+            $langId = (int) $context->language->id;
+            $anchorText = false;
+            $link = false;
 
-            if ($matches[1] == 'NAME_CMS_ID') {
-                $value = $cms->meta_title;
-            } else {
-                $value = $context->link->getCMSLink($cms);
+            switch ($entityType) {
+                case 'product':
+                    $entity = new Product($entityId, false, $langId);
+                    if (Validate::isLoadedObject($entity)) {
+                        $anchorText = $entity->name;
+                        $link = $context->link->getProductLink($entity);
+                    }
+                    break;
+                case 'category':
+                    $entity = new Category($entityId, $langId);
+                    if (Validate::isLoadedObject($entity)) {
+                        $anchorText = $entity->name;
+                        $link = $context->link->getCategoryLink($entity);
+                    }
+                    break;
+                case 'cms':
+                    $entity = new CMS($entityId, $langId);
+                    if (Validate::isLoadedObject($entity)) {
+                        $anchorText = $entity->meta_title;
+                        $link = $context->link->getCMSLink($entity);
+                    }
+                    break;
+                case 'cmsCategory':
+                    $entity = new CMSCategory($entityId, $langId);
+                    if (Validate::isLoadedObject($entity)) {
+                        $anchorText = $entity->name;
+                        $link = $context->link->getCMSCategoryLink($entity);
+                    }
+                    break;
+                case 'manufacturer':
+                    $entity = new Manufacturer($entityId, $langId);
+                    if (Validate::isLoadedObject($entity)) {
+                        $anchorText = $entity->name;
+                        $link = $context->link->getManufacturerLink($entity);
+                    }
+                    break;
             }
 
-            return $value;
+            if ($anchorText !== false && $link !== false) {
+                return '<a href="' . $link . '">' . $anchorText . '</a>';
+            }
+
+            return '';
         }, $content);
 
         return $content;

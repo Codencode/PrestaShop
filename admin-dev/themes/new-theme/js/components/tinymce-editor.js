@@ -26,9 +26,6 @@ import ComponentsMap from '@components/components-map';
 /* // TODO <cnc-modifica> - TinyMCEEditor -  */
 import Router from '@components/router';
 
-/* // TODO <cnc> aggiunta componente "EntitySearchInput" -  */
-import EntitySearchInput from '@components/entity-search-input';
-
 import { EventEmitter } from './event-emitter';
 
 const { $ } = window;
@@ -132,12 +129,42 @@ class TinyMCEEditor {
       },
       ...config,
     };
-    /* // TODO <cnc-modifica> - TinyMCEEditor::initTinyMCE() - */
+    /**
+     * // TODO <cnc-modifica> - TinyMCEEditor::initTinyMCE() - formattazione inline
+     * Bisogna valutare se questa formattazione inline va bene per evidenziare lo span del link 
+     */
     config.advantageLink = true;
 
     if (config.advantageLink) {
       cfg.advantageLink = true;
       cfg.toolbar1 += ',advantageLink';
+      
+      cfg.content_style = `
+                            span[data-entity-type] {
+                                display: inline-block;
+                                width: 20px;
+                                height: 20px;
+                                border: 1px dashed #000;
+                                text-align: center;
+                                vertical-align: middle;
+                                position: relative;
+                                font-size: 12px;
+                                font-weight: bold;
+                                color: white;
+                                border-radius: 4px;
+                                padding: 2px 6px;
+                            }
+                            span[data-entity-type]::after {
+                                content: "🔗";
+                                font-size: 10px;
+                                color: black;
+                                position: absolute;
+                                top: 50%;
+                                left: 50%;
+                                transform: translate(-50%, -50%);
+                                white-space: nowrap;
+                            }
+                        `
     }
     /* ****************************************************** */
 
@@ -214,8 +241,6 @@ class TinyMCEEditor {
                 label: 'Search',
                 value: '',
                 onkeyup: function () {
-                  //TODO <cnc> aggiunta componente "EntitySearchInput"
-
                   if (debounceTimeout) {
                     clearTimeout(debounceTimeout);
                   }
@@ -245,7 +270,7 @@ class TinyMCEEditor {
                           parent.append({
                             label: 'Dynamic Listbox',
                             type: 'listbox',
-                            name: 'listbox',
+                            name: 'entityId',
                             values: data.map(item => ({
                               text: item.name,
                               value: item.id
@@ -262,28 +287,17 @@ class TinyMCEEditor {
               },
               {
                 type: 'listbox',
-                name: 'search_result',
+                name: 'entityId',
                 label: 'Results',
-                id: 'search_result',
                 values: [],
                 onPostRender: function () {
                   resultsListbox = this;
                 }
               },
             ],
-            onsubmit(e) {
-              let { text } = e.data;
-              const { pageId } = e.data;
-
-              /**
-               * ////TODO <cnc> >>>>>>>>>>>>>>>>>> SONO ARRIVATO QUI: qui devo inserire uno span con ID e TYPE object
-               */
-
-              if (!text) {
-                text = `NAME_CMS_ID=${pageId}`;
-              }
-
-              editor.insertContent(`<a href="URL_CMS_ID=${pageId}">${text}</a>`);
+            onsubmit(event) {
+              const { entityType, entityId } = event.data;
+              editor.insertContent(`<span data-entity-type="${entityType}" data-entity-id="${entityId}"/>`);
             },
           });
         },

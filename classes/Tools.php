@@ -3659,6 +3659,12 @@ exit;
                     if ($allow_style) {
                         $def->addElement('style', 'Block', 'Flow', 'Common', ['type' => 'Text']);
                     }
+                    // TODO <cnc-modifica> - Tools::purifyHTML() - 
+                    $def->addElement('span', 'Block', 'Flow', 'Common', [
+                        'data-entity-type' => 'Text',
+                        'data-entity-id' => 'Text',
+                    ]);
+                    // ********************************************
                 }
 
                 $purifier = new HTMLPurifier($config);
