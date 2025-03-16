@@ -24,11 +24,16 @@
  */
 import ComponentsMap from '@components/components-map';
 /* // TODO <cnc-modifica> - TinyMCEEditor -  */
+/**
+ * // TODO <cnc-modifica> >>>>>>>>>>>>>>>>>>>>> SONO ARRIVATO QUI: 
+ * bisogna travare un posto in cui inserire la ricerca delle entities, per ora l'ho inserita in: CmsPageController::shortCodesSearchAction().
+ * Ovviamente va modificata anche la rotta "admin_shortcodes_search" 
+ */
 import Router from '@components/router';
 
-import { EventEmitter } from './event-emitter';
+import {EventEmitter} from './event-emitter';
 
-const { $ } = window;
+const {$} = window;
 
 /**
  * This class init TinyMCE instances in the back-office. It is wildly inspired by
@@ -116,7 +121,7 @@ class TinyMCEEditor {
       extended_valid_elements: 'em[class|name|id],@[role|data-*|aria-*]',
       valid_children: '+*[*]',
       valid_elements: '*[*]',
-      rel_list: [{ title: 'nofollow', value: 'nofollow' }],
+      rel_list: [{title: 'nofollow', value: 'nofollow'}],
       editor_selector: ComponentsMap.tineMceEditor.selectorClass,
       init_instance_callback: () => {
         this.changeToMaterial();
@@ -142,8 +147,8 @@ class TinyMCEEditor {
       cfg.content_style = `
                             span[data-entity-type] {
                                 display: inline-block;
-                                width: 20px;
-                                height: 20px;
+                                width: 10px;
+                                height: 10px;
                                 border: 1px dashed #000;
                                 text-align: center;
                                 vertical-align: middle;
@@ -153,6 +158,7 @@ class TinyMCEEditor {
                                 color: white;
                                 border-radius: 4px;
                                 padding: 2px 6px;
+                                margin: 0 5px;
                             }
                             span[data-entity-type]::after {
                                 content: "🔗";
@@ -205,7 +211,7 @@ class TinyMCEEditor {
         title: 'Internal link',
         onclick() {
           editor.windowManager.open({
-            title: 'Aggiungi link interno',
+            title: 'Add internal link',
             body: [
               {
                 type: 'listbox',
@@ -264,7 +270,6 @@ class TinyMCEEditor {
                         },
                         success: function (data) {
 
-                          console.log(data)
                           resultsListbox.remove();
 
                           parent.append({
