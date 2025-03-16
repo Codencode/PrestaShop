@@ -3991,6 +3991,75 @@ exit;
 
         return false;
     }
+
+    public static function processShortcodes($content): string
+    { // TODO <cnc-modifica> - Tools::processShortcodes() - - modifica per rendere generale gli shortcodes
+        /** @var Context $context */
+        $context = Context::getContext();
+        $pattern = '/<span\s+data-entity-type="([^"]+)"\s+data-entity-id="(\d+)"/';
+
+        preg_match_all($pattern, $content, $entitiesIds);
+
+        $content = preg_replace_callback($pattern, function ($matches) use ($context) {
+            /**
+             * // TODO <cnc-modifica> - Tools::processShortcodes() - DA MIGLIORARE:
+             * - qui bisognerebbe non caricare ogni entity una sola volta
+             * - questo codice non so se va bene qui o se andrebbe spostato da qualche altra parte
+             *   si potrebbe creare un metodo nell'ObjectModel per convertire gli shortcodes
+             */
+            $entityType = $matches[1];
+            $entityId = (int) $matches[2];
+            $langId = (int) $context->language->id;
+            $anchorText = false;
+            $link = false;
+
+            switch ($entityType) {
+                case 'product':
+                    $entity = new Product($entityId, false, $langId);
+                    if (Validate::isLoadedObject($entity)) {
+                        $anchorText = $entity->name;
+                        $link = $context->link->getProductLink($entity);
+                    }
+                    break;
+                case 'category':
+                    $entity = new Category($entityId, $langId);
+                    if (Validate::isLoadedObject($entity)) {
+                        $anchorText = $entity->name;
+                        $link = $context->link->getCategoryLink($entity);
+                    }
+                    break;
+                case 'cms':
+                    $entity = new CMS($entityId, $langId);
+                    if (Validate::isLoadedObject($entity)) {
+                        $anchorText = $entity->meta_title;
+                        $link = $context->link->getCMSLink($entity);
+                    }
+                    break;
+                case 'cmsCategory':
+                    $entity = new CMSCategory($entityId, $langId);
+                    if (Validate::isLoadedObject($entity)) {
+                        $anchorText = $entity->name;
+                        $link = $context->link->getCMSCategoryLink($entity);
+                    }
+                    break;
+                case 'manufacturer':
+                    $entity = new Manufacturer($entityId, $langId);
+                    if (Validate::isLoadedObject($entity)) {
+                        $anchorText = $entity->name;
+                        $link = $context->link->getManufacturerLink($entity);
+                    }
+                    break;
+            }
+
+            if ($anchorText !== false && $link !== false) {
+                return '<a href="' . $link . '">' . $anchorText . '</a>';
+            }
+
+            return '';
+        }, $content);
+
+        return $content;
+    }
 }
 
 /**

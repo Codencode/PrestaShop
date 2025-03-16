@@ -36,6 +36,7 @@ use PrestaShop\PrestaShop\Adapter\Product\PriceFormatter;
 use PrestaShop\PrestaShop\Adapter\Product\ProductColorsRetriever;
 use PrestaShop\PrestaShop\Core\Product\ProductPresentationSettings;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Tools;
 
 class ProductPresenter
 {
@@ -97,6 +98,10 @@ class ProductPresenter
         array $product,
         Language $language
     ) {
+        // TODO <cnc-modifica> - ProductPresenter::present() - modifica per rendere generale gli shortcodes
+        $product['description'] = Tools::processShortcodes($product['description']);
+        // ********************************************************
+
         $productLazyArray = new ProductLazyArray(
             $settings,
             $product,

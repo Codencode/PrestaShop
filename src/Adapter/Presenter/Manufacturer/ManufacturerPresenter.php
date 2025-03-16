@@ -31,6 +31,7 @@ use Language;
 use Link;
 use Manufacturer;
 use PrestaShop\PrestaShop\Adapter\Image\ImageRetriever;
+use Tools;
 
 class ManufacturerPresenter
 {
@@ -70,6 +71,10 @@ class ManufacturerPresenter
         if (empty($manufacturer['id'])) {
             $manufacturer['id'] = $manufacturer['id_manufacturer'];
         }
+
+        // TODO <cnc-modifica> - ManufacturerPresenter::present() - modifica per rendere generale gli shortcodes
+        $manufacturer['description'] = Tools::processShortcodes($manufacturer['description']);
+        // ********************************************************
 
         $manufacturerLazyArray = new ManufacturerLazyArray(
             $manufacturer,
