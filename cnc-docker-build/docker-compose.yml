@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  prestashop-builder:
+    build:
+      context: ..
+      dockerfile: cnc-docker-build/Dockerfile
+    container_name: prestashop-builder
+    volumes:
+      - ../:/app
