@@ -25,6 +25,8 @@
  */
 require_once 'Exception/BuildException.php';
 require_once 'Library/ReleaseCreator.php';
+// aggiungo la nuova classe che estende l'originale
+require_once 'Library/ReleaseCreatorCnc.php';
 require_once 'Library/ConsoleWriter.php';
 require_once 'Library/Version.php';
 
@@ -119,7 +121,8 @@ if (isset($userOptions['keep-tests'])) {
 }
 
 try {
-    $releaseCreator = new ReleaseCreator($version, $useInstaller, $useZip, $destinationDir, $keepTests);
+    // eseguo il metodo "createRelease" sulla nuova classe
+    $releaseCreator = new ReleaseCreatorCnc($version, $useInstaller, $useZip, $destinationDir, $keepTests);
     $releaseCreator->createRelease();
 } catch (Exception $e) {
     $consoleWrite->displayText(
