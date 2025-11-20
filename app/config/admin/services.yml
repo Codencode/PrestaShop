@@ -57,7 +57,7 @@ services:
 
   # Context listeners, these are event subscribers, so they define their priority themselves
   PrestaShopBundle\EventListener\Admin\Context\EmployeeContextSubscriber: ~
-  PrestaShopBundle\EventListener\Admin\Context\LanguageContextSubscriber: 
+  PrestaShopBundle\EventListener\Admin\Context\LanguageContextSubscriber: ~
   
   PrestaShopBundle\EventListener\Admin\Context\ShopContextSubscriber:
     autowire: true
