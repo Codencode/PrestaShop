@@ -9,6 +9,8 @@ namespace PrestaShopBundle\Security\Admin;
 use PrestaShopBundle\Entity\Employee\Employee;
 use PrestaShopBundle\Entity\Employee\Employee as DoctrineEmployee;
 use PrestaShopBundle\Entity\Repository\EmployeeRepository;
+use PrestaShopBundle\SchebTwoFactor\TwoFactorIntegrityCalculator;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -19,6 +21,8 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
  */
 class EmployeeProvider implements UserProviderInterface
 {
+    private const TWO_FACTOR_INTEGRITY_ERROR = 'employee.two_factor_integrity_invalid';
+
     /**
      * @deprecated Since v9.0 use Employee::ROLE_EMPLOYEE instead
      */
@@ -31,6 +35,7 @@ class EmployeeProvider implements UserProviderInterface
 
     public function __construct(
         private readonly EmployeeRepository $employeeRepository,
+        private readonly TwoFactorIntegrityCalculator $twoFactorIntegrityCalculator,
     ) {
     }
 
@@ -96,6 +101,25 @@ class EmployeeProvider implements UserProviderInterface
             throw new UserNotFoundException(sprintf('Identifier "%s" does not exist.', $email));
         }
 
+        $this->assertTwoFactorIntegrity($doctrineEmployee);
+
         return $doctrineEmployee;
+    }
+
+    private function assertTwoFactorIntegrity(DoctrineEmployee $employee): void
+    {
+        $expectedIntegrity = $this->twoFactorIntegrityCalculator->calculate(
+            $employee->getId(),
+            $employee->getTwoFactorEnabled(),
+            $employee->getTwoFactorTotEnabled(),
+            $employee->getTwoFactorEmailEnabled(),
+            $employee->getTwoFactorSecret()
+        );
+
+        $storedIntegrity = $employee->getTwoFactorIntegrity();
+
+        if (null === $storedIntegrity || !hash_equals($storedIntegrity, $expectedIntegrity)) {
+            throw new CustomUserMessageAuthenticationException(self::TWO_FACTOR_INTEGRITY_ERROR);
+        }
     }
 }

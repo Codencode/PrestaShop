@@ -90,6 +90,10 @@ services:
     autowire: true
     autoconfigure: true
 
+  PrestaShopBundle\SchebTwoFactor\TwoFactorIntegrityCalculator:
+    autowire: true
+    autoconfigure: true
+
   PrestaShop\PrestaShop\Adapter\TotMailer\TwoFactorAuthCodePrestashopMailer:
     autowire: true
     autoconfigure: true

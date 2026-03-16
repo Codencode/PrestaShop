@@ -45,6 +45,7 @@ use PrestaShop\PrestaShop\Core\Module\ConfigReader as ModuleConfigReader;
 use PrestaShop\PrestaShop\Core\Theme\ConfigReader as ThemeConfigReader;
 use PrestaShop\PrestaShop\Core\Version;
 use PrestaShopBundle\Cache\LocalizationWarmer;
+use PrestaShopBundle\SchebTwoFactor\TwoFactorIntegrityCalculator;
 use PrestaShopException;
 use PrestashopInstallerException;
 use PrestaShopLoggerInterface;
@@ -868,6 +869,24 @@ class Install extends AbstractInstall
 
                 return false;
             }
+
+            $parameters = require _PS_ROOT_DIR_ . '/app/config/parameters.php';
+            $newCookieKey = $parameters['parameters']['new_cookie_key'] ?? null;
+            $twoFactorIntegrityCalculator = new TwoFactorIntegrityCalculator($newCookieKey);
+            $employee->two_factor_integrity = $twoFactorIntegrityCalculator->calculate(
+                (int) $employee->id,
+                (bool) $employee->two_factor_enabled,
+                (bool) $employee->two_factor_totp_enabled,
+                (bool) $employee->two_factor_email_enabled,
+                $employee->two_factor_totp_secret
+            );
+
+            if (!$employee->update()) {
+                $this->setError($this->translator->trans('Cannot initialize admin account two-factor integrity', [], 'Install'));
+
+                return false;
+            }
+
             Context::getContext()->employee = $employee;
         } else {
             $this->setError($this->translator->trans('Cannot create admin account', [], 'Install'));

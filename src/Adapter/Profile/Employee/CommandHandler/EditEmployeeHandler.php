@@ -18,6 +18,7 @@ use PrestaShop\PrestaShop\Core\Domain\Employee\Exception\InvalidProfileException
 use PrestaShop\PrestaShop\Core\Domain\Employee\Exception\MissingShopAssociationException;
 use PrestaShop\PrestaShop\Core\Employee\Access\ProfileAccessCheckerInterface;
 use PrestaShop\PrestaShop\Core\Employee\ContextEmployeeProviderInterface;
+use PrestaShopBundle\SchebTwoFactor\TwoFactorIntegrityCalculator;
 use Shop;
 
 /**
@@ -49,21 +50,29 @@ final class EditEmployeeHandler extends AbstractEmployeeHandler implements EditE
     private $legacyContext;
 
     /**
+     * @var TwoFactorIntegrityCalculator
+     */
+    private $twoFactorIntegrityCalculator;
+
+    /**
      * @param Hashing $hashing
      * @param ProfileAccessCheckerInterface $profileAccessChecker
      * @param ContextEmployeeProviderInterface $contextEmployeeProvider
      * @param LegacyContext $legacyContext
+     * @param TwoFactorIntegrityCalculator $twoFactorIntegrityCalculator
      */
     public function __construct(
         Hashing $hashing,
         ProfileAccessCheckerInterface $profileAccessChecker,
         ContextEmployeeProviderInterface $contextEmployeeProvider,
-        LegacyContext $legacyContext
+        LegacyContext $legacyContext,
+        TwoFactorIntegrityCalculator $twoFactorIntegrityCalculator
     ) {
         $this->hashing = $hashing;
         $this->profileAccessChecker = $profileAccessChecker;
         $this->contextEmployeeProvider = $contextEmployeeProvider;
         $this->legacyContext = $legacyContext;
+        $this->twoFactorIntegrityCalculator = $twoFactorIntegrityCalculator;
     }
 
     /**
@@ -118,6 +127,14 @@ final class EditEmployeeHandler extends AbstractEmployeeHandler implements EditE
         if (!$command->getTwoFactorTotEnabled()) {
             $employee->two_factor_totp_secret = null;
         }
+
+        $employee->two_factor_integrity = $this->twoFactorIntegrityCalculator->calculate(
+            (int) $employee->id,
+            (bool) $employee->two_factor_enabled,
+            (bool) $employee->two_factor_totp_enabled,
+            (bool) $employee->two_factor_email_enabled,
+            $employee->two_factor_totp_secret
+        );
 
         // Allow changing profile and active status only when editing not own account.
         if ($employee->id != $this->contextEmployeeProvider->getId()) {

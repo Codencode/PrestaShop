@@ -12,6 +12,7 @@ use PrestaShop\PrestaShop\Core\Domain\Employee\Command\SetEmployeeTwoFactorSecre
 use PrestaShop\PrestaShop\Core\Domain\Employee\CommandHandler\SetEmployeeTwoFactorSecretHandlerInterface;
 use PrestaShopBundle\Entity\Employee\Employee as EntityEmployee;
 use PrestaShopBundle\Entity\Repository\EmployeeRepository;
+use PrestaShopBundle\SchebTwoFactor\TwoFactorIntegrityCalculator;
 
 /**
  * Handles the command that stores the two-factor authentication secret
@@ -24,6 +25,7 @@ final class SetEmployeeTwoFactorSecretHandler implements SetEmployeeTwoFactorSec
     public function __construct(
         private readonly EmployeeRepository $employeeRepository,
         private readonly EntityManagerInterface $entityManager,
+        private readonly TwoFactorIntegrityCalculator $twoFactorIntegrityCalculator,
     ) {
     }
 
@@ -39,7 +41,16 @@ final class SetEmployeeTwoFactorSecretHandler implements SetEmployeeTwoFactorSec
 
         $employee
             ->setTwoFactorSecret($command->getSecret())
-            ->setTwoFactorTotpSecretPlain($command->getSecretPlain());
+            ->setTwoFactorTotpSecretPlain($command->getSecretPlain())
+            ->setTwoFactorIntegrity(
+                $this->twoFactorIntegrityCalculator->calculate(
+                    $employee->getId(),
+                    $employee->getTwoFactorEnabled(),
+                    $employee->getTwoFactorTotEnabled(),
+                    $employee->getTwoFactorEmailEnabled(),
+                    $command->getSecret()
+                )
+            );
 
         $this->entityManager->persist($employee);
         $this->entityManager->flush();

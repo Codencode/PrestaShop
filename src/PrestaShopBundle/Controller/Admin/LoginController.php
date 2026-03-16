@@ -23,12 +23,15 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Throwable;
 
 class LoginController extends PrestaShopAdminController
 {
+    private const TWO_FACTOR_INTEGRITY_ERROR = 'employee.two_factor_integrity_invalid';
+
     public function __construct(
         private readonly ShopContext $shopContext,
         private readonly string $projectDir,
@@ -68,8 +71,23 @@ class LoginController extends PrestaShopAdminController
         $loginForm = $loginFormHandler->getForm();
         $requestPasswordResetForm = $requestResetPasswordFormHandler->getForm();
 
-        if ($authenticationUtils->getLastAuthenticationError() instanceof AuthenticationException) {
-            $this->addFlash('error', $this->trans('The employee does not exist, or the password provided is incorrect.', [], 'Admin.Login.Notification'));
+        $authenticationError = $authenticationUtils->getLastAuthenticationError();
+        if ($authenticationError instanceof AuthenticationException) {
+            if (
+                $authenticationError instanceof CustomUserMessageAuthenticationException
+                && $authenticationError->getMessageKey() === self::TWO_FACTOR_INTEGRITY_ERROR
+            ) {
+                $this->addFlash(
+                    'error',
+                    $this->trans(
+                        'The two-factor authentication configuration for this employee is invalid or has been modified. Please contact an administrator.',
+                        [],
+                        'Admin.Login.Notification'
+                    )
+                );
+            } else {
+                $this->addFlash('error', $this->trans('The employee does not exist, or the password provided is incorrect.', [], 'Admin.Login.Notification'));
+            }
         }
 
         return $this->renderLoginPage($loginForm, $requestPasswordResetForm, false);

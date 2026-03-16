@@ -17,6 +17,7 @@ use PrestaShop\PrestaShop\Core\Domain\Employee\Exception\InvalidProfileException
 use PrestaShop\PrestaShop\Core\Domain\Employee\ValueObject\EmployeeId;
 use PrestaShop\PrestaShop\Core\Employee\Access\ProfileAccessCheckerInterface;
 use PrestaShop\PrestaShop\Core\Employee\ContextEmployeeProviderInterface;
+use PrestaShopBundle\SchebTwoFactor\TwoFactorIntegrityCalculator;
 
 /**
  * Handles command which adds new employee using legacy object model
@@ -42,18 +43,26 @@ final class AddEmployeeHandler extends AbstractEmployeeHandler implements AddEmp
     private $contextEmployeeProvider;
 
     /**
+     * @var TwoFactorIntegrityCalculator
+     */
+    private $twoFactorIntegrityCalculator;
+
+    /**
      * @param Hashing $hashing
      * @param ProfileAccessCheckerInterface $profileAccessChecker
      * @param ContextEmployeeProviderInterface $contextEmployeeProvider
+     * @param TwoFactorIntegrityCalculator $twoFactorIntegrityCalculator
      */
     public function __construct(
         Hashing $hashing,
         ProfileAccessCheckerInterface $profileAccessChecker,
-        ContextEmployeeProviderInterface $contextEmployeeProvider
+        ContextEmployeeProviderInterface $contextEmployeeProvider,
+        TwoFactorIntegrityCalculator $twoFactorIntegrityCalculator
     ) {
         $this->hashing = $hashing;
         $this->profileAccessChecker = $profileAccessChecker;
         $this->contextEmployeeProvider = $contextEmployeeProvider;
+        $this->twoFactorIntegrityCalculator = $twoFactorIntegrityCalculator;
     }
 
     /**
@@ -105,6 +114,18 @@ final class AddEmployeeHandler extends AbstractEmployeeHandler implements AddEmp
 
         if (false === $employee->add()) {
             throw new EmployeeException(sprintf('Failed to add new employee with email "%s"', $command->getEmail()->getValue()));
+        }
+
+        $employee->two_factor_integrity = $this->twoFactorIntegrityCalculator->calculate(
+            (int) $employee->id,
+            (bool) $employee->two_factor_enabled,
+            (bool) $employee->two_factor_totp_enabled,
+            (bool) $employee->two_factor_email_enabled,
+            $employee->two_factor_totp_secret
+        );
+
+        if (false === $employee->update()) {
+            throw new EmployeeException(sprintf('Failed to initialize two-factor integrity for employee with email "%s"', $command->getEmail()->getValue()));
         }
 
         return $employee;

@@ -220,6 +220,11 @@ class Employee implements UserInterface, PasswordAuthenticatedUserInterface, Equ
      */
     private ?string $twoFactorEmailAuthCode = null;
 
+    /**
+     * @ORM\Column(name="two_factor_integrity", type="string", length=255, nullable=true)
+     */
+    private ?string $twoFactorIntegrity = null;
+
     private ?string $twoFactorTotpSecretPlain = null;
 
     public function __construct()
@@ -786,6 +791,16 @@ class Employee implements UserInterface, PasswordAuthenticatedUserInterface, Equ
     }
 
     /**
+     * Get the value of twoFactorTotEnabled
+     *
+     * @return bool
+     */
+    public function getTwoFactorTotEnabled(): bool
+    {
+        return $this->twoFactorTotEnabled;
+    }
+
+    /**
      * Get the value of twoFactorEmailEnabled
      *
      * @return bool
@@ -805,6 +820,30 @@ class Employee implements UserInterface, PasswordAuthenticatedUserInterface, Equ
     public function setTwoFactorEmailEnabled(bool $twoFactorEmailEnabled): self
     {
         $this->twoFactorEmailEnabled = $twoFactorEmailEnabled;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of twoFactorIntegrity
+     *
+     * @return ?string
+     */
+    public function getTwoFactorIntegrity(): ?string
+    {
+        return $this->twoFactorIntegrity;
+    }
+
+    /**
+     * Set the value of twoFactorIntegrity
+     *
+     * @param ?string $twoFactorIntegrity
+     *
+     * @return self
+     */
+    public function setTwoFactorIntegrity(?string $twoFactorIntegrity): self
+    {
+        $this->twoFactorIntegrity = $twoFactorIntegrity;
 
         return $this;
     }

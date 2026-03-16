@@ -105,6 +105,11 @@ class EmployeeCore extends ObjectModel
     public $two_factor_totp_secret;
 
     /**
+     * @var string|null
+     */
+    public $two_factor_integrity;
+
+    /**
      * @see ObjectModel::$definition
      */
     public static $definition = [
@@ -141,6 +146,7 @@ class EmployeeCore extends ObjectModel
             'two_factor_totp_enabled' => ['type' => self::TYPE_BOOL, 'validate' => 'isBool'],
             'two_factor_email_enabled' => ['type' => self::TYPE_BOOL, 'validate' => 'isBool'],
             'two_factor_totp_secret' => ['type' => self::TYPE_STRING, 'required' => false, 'size' => 512],
+            'two_factor_integrity' => ['type' => self::TYPE_STRING, 'required' => false, 'size' => 255],
         ],
     ];
 
