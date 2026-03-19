@@ -98,3 +98,8 @@ services:
       - '@prestashop.core.command_bus'
     tags:
       - 'console.command'
+
+  PrestaShopBundle\Command\SyncEmployeeTwoFactorCommand:
+    autowire: true
+    tags:
+      - 'console.command'

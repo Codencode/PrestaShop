@@ -801,6 +801,20 @@ class Employee implements UserInterface, PasswordAuthenticatedUserInterface, Equ
     }
 
     /**
+     * Set the value of twoFactorTotEnabled
+     *
+     * @param bool $twoFactorTotEnabled
+     *
+     * @return self
+     */
+    public function setTwoFactorTotEnabled(bool $twoFactorTotEnabled): self
+    {
+        $this->twoFactorTotEnabled = $twoFactorTotEnabled;
+
+        return $this;
+    }
+
+    /**
      * Get the value of twoFactorEmailEnabled
      *
      * @return bool
@@ -872,3 +886,4 @@ class Employee implements UserInterface, PasswordAuthenticatedUserInterface, Equ
         return $this;
     }
 }
+
