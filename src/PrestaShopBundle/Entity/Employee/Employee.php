@@ -12,6 +12,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use PrestaShopBundle\Entity\Lang;
 use PrestaShopBundle\Security\Admin\SessionEmployeeInterface;
+use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Model\Email\TwoFactorInterface as EmailTwoFactorInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface as TotpTwoFactorInterface;
@@ -31,7 +32,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
  *     },
  *  )
  */
-class Employee implements UserInterface, PasswordAuthenticatedUserInterface, EquatableInterface, SessionEmployeeInterface, TotpTwoFactorInterface, EmailTwoFactorInterface
+class Employee implements UserInterface, PasswordAuthenticatedUserInterface, EquatableInterface, SessionEmployeeInterface, TotpTwoFactorInterface, EmailTwoFactorInterface, BackupCodeInterface
 {
     public const ROLE_EMPLOYEE = 'ROLE_EMPLOYEE';
 
@@ -224,6 +225,13 @@ class Employee implements UserInterface, PasswordAuthenticatedUserInterface, Equ
      * @ORM\Column(name="two_factor_integrity", type="string", length=255, nullable=true)
      */
     private ?string $twoFactorIntegrity = null;
+
+    /**
+     * @ORM\Column(name="two_factor_backup_codes", type="json", nullable=true)
+     *
+     * @var string[]|null
+     */
+    private ?array $twoFactorBackupCodes = null;
 
     private ?string $twoFactorTotpSecretPlain = null;
 
@@ -862,6 +870,49 @@ class Employee implements UserInterface, PasswordAuthenticatedUserInterface, Equ
         return $this;
     }
 
+    public function isBackupCode(string $code): bool
+    {
+        foreach ($this->twoFactorBackupCodes ?? [] as $hashedBackupCode) {
+            if (password_verify($code, $hashedBackupCode)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function invalidateBackupCode(string $code): void
+    {
+        $backupCodes = $this->twoFactorBackupCodes ?? [];
+
+        foreach ($backupCodes as $backupCodeIndex => $hashedBackupCode) {
+            if (password_verify($code, $hashedBackupCode)) {
+                unset($backupCodes[$backupCodeIndex]);
+                $this->twoFactorBackupCodes = array_values($backupCodes);
+
+                return;
+            }
+        }
+    }
+
+    /**
+     * @return string[]|null
+     */
+    public function getTwoFactorBackupCodes(): ?array
+    {
+        return $this->twoFactorBackupCodes;
+    }
+
+    /**
+     * @param string[]|null $twoFactorBackupCodes
+     */
+    public function setTwoFactorBackupCodes(?array $twoFactorBackupCodes): self
+    {
+        $this->twoFactorBackupCodes = $twoFactorBackupCodes === null ? null : array_values($twoFactorBackupCodes);
+
+        return $this;
+    }
+
     /**
      * Get the value of twoFactorTotpSecretPlain
      *
@@ -886,4 +937,3 @@ class Employee implements UserInterface, PasswordAuthenticatedUserInterface, Equ
         return $this;
     }
 }
-

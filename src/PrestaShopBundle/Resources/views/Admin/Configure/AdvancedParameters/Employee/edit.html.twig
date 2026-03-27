@@ -4,6 +4,26 @@
  #}
 {% extends '@PrestaShop/Admin/layout.html.twig' %}
 
+{% block session_alert %}
+  {{ parent() }}
+
+  {% if app.session.flashbag.peek('backup_codes')|length() > 0 %}
+    <div class="alert alert-warning d-print-none" role="alert">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true"><i class="material-icons">close</i></span>
+      </button>
+      <div class="alert-text">
+        <p>{{ 'Store these backup codes in a safe place. They will not be shown again.'|trans({}, 'Admin.Advparameters.Feature') }}</p>
+        <ul class="mb-0">
+          {% for backupCode in app.session.flashbag.get('backup_codes') %}
+            <li><code>{{ backupCode }}</code></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
+
 {% block content %}
   {% if employeeForm.vars.errors is not empty %}
     <div class="alert alert-danger">
@@ -15,7 +35,10 @@
 
   {{ include('@PrestaShop/Admin/Configure/AdvancedParameters/Employee/Blocks/form.html.twig', {
     employeeForm: employeeForm,
-    isRestrictedAccess: isRestrictedAccess
+    isRestrictedAccess: isRestrictedAccess,
+    editableEmployee: editableEmployee,
+    hasBackupCodes: hasBackupCodes,
+    canManageBackupCodes: canManageBackupCodes
   }) }}
 {% endblock %}
 

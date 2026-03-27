@@ -128,6 +128,7 @@
         "prestashop/statssearch": "^2",
         "prestashop/statsstock": "^2",
         "prestashop/translationtools-bundle": "^6.0.1",
+        "scheb/2fa-backup-code": "^6.13",
         "scheb/2fa-bundle": "^6.13",
         "scheb/2fa-email": "^6.13",
         "scheb/2fa-totp": "^6.13",

@@ -6,6 +6,7 @@
 
 namespace PrestaShopBundle\Controller\Admin\Configure\AdvancedParameters;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
 use Exception;
@@ -47,6 +48,7 @@ use PrestaShop\PrestaShop\Core\Util\HelperCard\DocumentationLinkProviderInterfac
 use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
 use PrestaShopBundle\Entity\Employee\Employee;
 use PrestaShopBundle\Entity\Repository\EmployeeRepository;
+use PrestaShopBundle\SchebTwoFactor\EmployeeBackupCodeManager;
 use PrestaShopBundle\SchebTwoFactor\TotpSecretEncryptor;
 use PrestaShopBundle\Security\Attribute\AdminSecurity;
 use PrestaShopBundle\Security\Attribute\DemoRestricted;
@@ -339,10 +341,18 @@ class EmployeeController extends PrestaShopAdminController
             return $this->redirectToRoute('admin_employees_index');
         }
 
+        /** @var Employee|null $employee */
+        $employee = $employeeRepository->findOneBy(['id' => $employeeId]);
+
         $templateVars = [
             'help_link' => $this->generateSidebarLink($request->attributes->get('_legacy_controller')),
             'employeeForm' => $employeeForm->createView(),
             'isRestrictedAccess' => $isRestrictedAccess,
+            'hasBackupCodes' => !empty($employee?->getTwoFactorBackupCodes()),
+            'canManageBackupCodes' => $isRestrictedAccess
+                && null !== $employee
+                && $employee->getTwoFactorEnabled()
+                && ($employee->getTwoFactorTotEnabled() || $employee->getTwoFactorEmailEnabled()),
             'editableEmployee' => $editableEmployee,
             'enableSidebar' => true,
             'layoutTitle' => $this->trans(
@@ -359,6 +369,104 @@ class EmployeeController extends PrestaShopAdminController
             '@PrestaShop/Admin/Configure/AdvancedParameters/Employee/edit.html.twig',
             $templateVars
         );
+    }
+
+    #[DemoRestricted(redirectRoute: 'admin_employees_index')]
+    public function generateBackupCodesAction(
+        int $employeeId,
+        Request $request,
+        EmployeeFormAccessCheckerInterface $formAccessChecker,
+        EmployeeRepository $employeeRepository,
+        EmployeeBackupCodeManager $employeeBackupCodeManager,
+        EntityManagerInterface $entityManager,
+        ConfigurationInterface $configuration,
+    ): RedirectResponse {
+        if ($this->getEmployeeContext()->getEmployee()->getId() !== $employeeId) {
+            if (!$this->isGranted(Permission::UPDATE, $request->get('_legacy_controller'))) {
+                $this->addFlash(
+                    'error',
+                    $this->trans(
+                        'You do not have permission to update this.',
+                        [],
+                        'Admin.Notifications.Error'
+                    )
+                );
+
+                return $this->redirectToRoute('admin_employees_index');
+            }
+        }
+
+        if (!$formAccessChecker->isRestrictedAccess($employeeId)) {
+            $this->addFlash(
+                'error',
+                $this->trans(
+                    'Backup codes can only be generated from the employee self-service profile page.',
+                    [],
+                    'Admin.Advparameters.Notification'
+                )
+            );
+
+            return $this->redirectToRoute('admin_employees_edit', ['employeeId' => $employeeId]);
+        }
+
+        if (!(bool) $configuration->get('PS_BACKOFFICE_2FA')) {
+            $this->addFlash(
+                'error',
+                $this->trans(
+                    'Two-factor authentication must be enabled before generating backup codes.',
+                    [],
+                    'Admin.Advparameters.Notification'
+                )
+            );
+
+            return $this->redirectToRoute('admin_employees_edit', ['employeeId' => $employeeId]);
+        }
+
+        /** @var Employee|null $employee */
+        $employee = $employeeRepository->findOneBy(['id' => $employeeId]);
+
+        if (null === $employee) {
+            $this->addFlash(
+                'error',
+                $this->trans('The object cannot be loaded (or found).', [], 'Admin.Notifications.Error')
+            );
+
+            return $this->redirectToRoute('admin_employees_index');
+        }
+
+        if (
+            !$employee->getTwoFactorEnabled()
+            || (!$employee->getTwoFactorTotEnabled() && !$employee->getTwoFactorEmailEnabled())
+        ) {
+            $this->addFlash(
+                'error',
+                $this->trans(
+                    'Enable at least one two-factor authentication method before generating backup codes.',
+                    [],
+                    'Admin.Advparameters.Notification'
+                )
+            );
+
+            return $this->redirectToRoute('admin_employees_edit', ['employeeId' => $employeeId]);
+        }
+
+        $backupCodeSet = $employeeBackupCodeManager->generateBackupCodeSet();
+
+        $employee->setTwoFactorBackupCodes($backupCodeSet['hashedBackupCodes']);
+        $entityManager->persist($employee);
+        $entityManager->flush();
+
+        $request->getSession()->getFlashBag()->set('backup_codes', $backupCodeSet['plainBackupCodes']);
+        $this->addFlash(
+            'success',
+            $this->trans(
+                'Backup codes generated successfully. Save them now: they will not be shown again.',
+                [],
+                'Admin.Notifications.Success'
+            )
+        );
+
+        return $this->redirectToRoute('admin_employees_edit', ['employeeId' => $employeeId]);
     }
 
     private function buildTwoFactorFormData(

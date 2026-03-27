@@ -866,6 +866,7 @@ CREATE TABLE `PREFIX_employee` (
   `two_factor_totp_secret` VARCHAR(512) DEFAULT NULL,
   `two_factor_email_enabled` TINYINT(1) unsigned NOT NULL DEFAULT '0',
   `two_factor_email_auth_code` VARCHAR(10) DEFAULT NULL,
+  `two_factor_backup_codes` LONGTEXT DEFAULT NULL,
   `two_factor_integrity` VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (`id_employee`),
   KEY `employee_login` (`email`, `passwd`),
