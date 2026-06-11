@@ -508,7 +508,9 @@ class EmployeeController extends PrestaShopAdminController
         $entityManager->persist($employee);
         $entityManager->flush();
 
-        $request->getSession()->getFlashBag()->set('backup_codes', $backupCodeSet['plainBackupCodes']);
+        foreach ($backupCodeSet['plainBackupCodes'] as $backupCode) {
+            $this->addFlash('backup_codes', $backupCode);
+        }
         $this->addFlash(
             'success',
             $this->trans(
@@ -748,7 +750,9 @@ class EmployeeController extends PrestaShopAdminController
         $entityManager->persist($employee);
         $entityManager->flush();
 
-        $request->getSession()->getFlashBag()->set('backup_codes', $backupCodeSet['plainBackupCodes']);
+        foreach ($backupCodeSet['plainBackupCodes'] as $backupCode) {
+            $this->addFlash('backup_codes', $backupCode);
+        }
         $this->addFlash(
             'success',
             $this->trans(
