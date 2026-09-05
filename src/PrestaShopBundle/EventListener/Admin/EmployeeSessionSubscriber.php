@@ -237,6 +237,9 @@ class EmployeeSessionSubscriber implements EventSubscriberInterface
     {
         $legacyCookie = $this->legacyContext->getContext()->cookie;
 
+        // Routing metadata for the front office, not proof of employee authentication.
+        $legacyCookie->admin_path = $request->getBasePath() . '/';
+
         // Mimic AdminLogin login action
         $legacyCookie->remote_addr = (int) ip2long($request->getClientIp());
         $employee = $this->security->getUser();

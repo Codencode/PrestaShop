@@ -17,7 +17,7 @@ header('X-Robots-Tag: noindex, nofollow');
 
 // This duplicates only the payload-reading format from Cookie::update().
 // Do not use Cookie::update(): a bad checksum can trigger logout and writes.
-$inspectCookie = static function (string $cookieName): array {
+$inspectCookie = static function (string $cookieName, string $expectedAdminPath = ''): array {
     $checks = [
         'Cookie ricevuto da PHP' => false,
         'Decifratura riuscita' => null,
@@ -66,11 +66,17 @@ $inspectCookie = static function (string $cookieName): array {
         $checks['Campo ' . $field . ' presente e non vuoto'] = isset($fields[$field]) && $fields[$field] !== '';
     }
 
+    if ($expectedAdminPath !== '') {
+        $checks['admin_path corrisponde al percorso BO atteso'] = ($fields['admin_path'] ?? null) === $expectedAdminPath;
+    }
+
     return $checks;
 };
 
 $cookieName = $_POST['cookie_name'] ?? '';
 $cookieName = is_string($cookieName) ? trim($cookieName) : '';
+$expectedAdminPath = $_POST['expected_admin_path'] ?? '';
+$expectedAdminPath = is_string($expectedAdminPath) ? trim($expectedAdminPath) : '';
 $checks = [];
 $error = '';
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
@@ -78,7 +84,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $error = 'Inserisci il nome completo del cookie BO: PrestaShop- seguito da 32 caratteri esadecimali.';
     } else {
         try {
-            $checks = $inspectCookie($cookieName);
+            $checks = $inspectCookie($cookieName, $expectedAdminPath);
         } catch (BadFormatException | EnvironmentIsBrokenException $exception) {
             $error = 'Il componente crittografico non ha potuto completare il controllo.';
         }
@@ -97,6 +103,10 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 <form method="post">
     <label for="cookie-name">Nome cookie BO</label>
     <input id="cookie-name" name="cookie_name" value="<?= $escape($cookieName) ?>" size="48" maxlength="43" required autocomplete="off" spellcheck="false">
+    <p>
+        <label for="expected-admin-path">Percorso BO atteso (facoltativo, per esempio /shop/adminXYZ/)</label>
+        <input id="expected-admin-path" name="expected_admin_path" value="<?= $escape($expectedAdminPath) ?>" size="48" autocomplete="off" spellcheck="false">
+    </p>
     <button type="submit">Verifica</button>
 </form>
 <?php if ($error !== ''): ?>
@@ -110,5 +120,6 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 </ul>
 <?php endif; ?>
 <p>Questa prova verifica ricezione e lettura del cookie selezionato, non la validità della sessione employee.
-Il campo admin_path può essere assente: la sua scrittura non è ancora stata implementata.</p>
+Il BO salva admin_path dopo il login e durante le richieste autenticate: visita prima una pagina BO.
+Il percorso atteso deve includere la sottocartella dell'installazione e lo slash finale, senza dominio o index.php.</p>
 </html>

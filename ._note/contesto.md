@@ -5,11 +5,19 @@
 Questo file serve a riprendere il lavoro in altre chat senza dipendere dalla cronologia della conversazione. Leggerlo per acquisire il contesto non implica avviare automaticamente l'implementazione: seguire la richiesta della chat corrente.
 
 * Il contesto è stato letto e discusso: obiettivo, separazione degli step e distinzione fra routing e autenticazione sono chiari.
-* È iniziata l'analisi del Core per lo **Step 1**: consultati `config/config.inc.php`, `classes/Cookie.php`, `classes/PhpEncryption.php` e `classes/PhpEncryptionEngine.php`, oltre alla documentazione generale e al contesto Cookie in `.ai`. Nessuna funzionalità Admin Bar è stata implementata.
+* Primo incremento dello **Step 1** implementato: scrittura di `admin_path` nel BO e confronto del suo valore nella diagnostica FO. Consultati `config/config.inc.php`, `classes/Cookie.php`, `classes/PhpEncryption.php`, `classes/PhpEncryptionEngine.php` ed `EmployeeSessionSubscriber`, oltre alla documentazione pertinente in `.ai`. Autenticazione FO employee e Admin Bar non sono state implementate.
 * Il BO crea `Cookie('psAdmin', '', ...)`: il path deriva dalla `physical_uri` dello shop e il nome HTTP effettivo è `PrestaShop-<hash>`. Il contenuto è cifrato e il cookie è HttpOnly. Il cookie nel Context FO è invece quello cliente.
-* L'utente ha completato la prova nel browser: ricezione, decifratura, formato, checksum e presenza dei campi employee/sessione hanno dato esito positivo; solo `admin_path` risulta assente, come previsto. La lettura del cookie BO dal FO è quindi verificata nella sua installazione; non equivale alla validazione della sessione employee.
-* La prova conferma la fattibilità del canale di lettura nella configurazione provata, non il completamento dello Step 1 o dell'intera Admin Bar. Restano da implementare e verificare la scrittura di `admin_path` nel BO e la sua lettura applicativa nel FO. Non estendere automaticamente l'esito ad altri domini, percorsi o configurazioni multistore.
-* Il nome `admin_path` è una proposta. Il suo valore deve rappresentare esclusivamente il percorso URL del BO, non il percorso filesystem di `_PS_ADMIN_DIR_` e non una prova di autenticazione.
+* Prima della modifica Core, l'utente ha completato la prova nel browser: ricezione, decifratura, formato, checksum e presenza dei campi employee/sessione hanno dato esito positivo; solo `admin_path` risultava assente, come previsto. Questo verifica la lettura del cookie BO nella sua installazione, non la validità della sessione employee.
+* Resta da effettuare la prova nel browser dopo la modifica Core, verificando il valore effettivo di `admin_path`. Non considerare ancora completato lo Step 1 e non estendere automaticamente l'esito ad altri domini, percorsi o configurazioni multistore. Il lettore applicativo definitivo FO non è ancora stato introdotto: questo incremento usa la diagnostica per dimostrare il trasferimento del dato.
+* Il campo scelto è `admin_path`. Rappresenta esclusivamente il percorso URL del BO, non il percorso filesystem di `_PS_ADMIN_DIR_` e non una prova di autenticazione.
+
+### Implementazione corrente dello Step 1
+
+* Modifica minima in `src/PrestaShopBundle/EventListener/Admin/EmployeeSessionSubscriber.php`, metodo `updateLegacyCookie()`: `$legacyCookie->admin_path = $request->getBasePath() . '/';`.
+* Il subscriber è già registrato in `app/config/admin/services.yml`. Il metodo viene chiamato dopo il login riuscito e durante le richieste BO autenticate, quindi aggiorna anche i cookie di sessioni già aperte e un eventuale percorso precedente. La scrittura HTTP resta affidata al ciclo BO esistente.
+* `Request::getBasePath()` ricava il percorso URL base del BO, includendo la sottocartella dell'installazione ed escludendo `index.php` e la route corrente. Il FO non deve conoscere `_PS_ADMIN_DIR_`. Nessuna modifica a domain/path/flag del cookie, al bootstrap FO o alle definizioni dei servizi.
+* Test aggiunto: `tests/Unit/PrestaShopBundle/EventListener/Admin/EmployeeSessionSubscriberTest.php`. Superati 11 test / 41 asserzioni con PHP 8.1: login e richieste autenticate per root, sottocartella, URL legacy/Symfony con e senza `index.php`, aggiornamento del vecchio percorso dopo rinomina e assenza del nuovo campo per richieste anonime. PHPUnit segnala soltanto lo schema XML preesistente deprecato.
+* PHP CS Fixer sui due file Core/test non ha richiesto correzioni; PHPStan mirato agli stessi file con la configurazione del progetto è passato senza errori. Sintassi della diagnostica verificata e sei casi sintetici superati, incluso il confronto con un percorso atteso errato.
 
 ### Valutazione di sicurezza discussa
 
@@ -25,12 +33,12 @@ Riferimenti consultati: [OWASP — Session Management](https://cheatsheetseries.
 
 ### Verifica temporanea della lettura FO
 
-* Script conservato su richiesta dell'utente in `._note/admin-cookie-check.php`, con bootstrap aggiornato alla nuova posizione. Per ripetere la prova, aprire `._note/admin-cookie-check.php` dall'URL base dell'installazione FO, se il server consente l'accesso alla cartella, nello stesso browser del login BO e inserire solo il nome HTTP completo del cookie BO già identificato.
+* Script conservato su richiesta dell'utente in `._note/admin-cookie-check.php`, con bootstrap aggiornato alla nuova posizione. Per la nuova prova, visitare prima una pagina BO autenticata e poi aprire `._note/admin-cookie-check.php` dall'URL base dell'installazione FO, se il server consente l'accesso alla cartella, nello stesso browser. Inserire il nome HTTP completo del cookie BO e il percorso BO atteso, ad esempio `/shop/adminXYZ/`, senza dominio o `index.php` e con slash finale.
 * Lo script usa il bootstrap FO e legge direttamente il cookie selezionato: mostra soltanto esiti booleani di ricezione, decifratura, formato, checksum e presenza di alcuni campi. Non istanzia il cookie Admin e non ne riscrive o rinnova il valore; il bootstrap mantiene il normale comportamento FO.
 * La lettura diagnostica riprende il formato di `Cookie::update()` senza richiamare i suoi effetti collaterali: su checksum non valido quel metodo può chiamare `logout()`.
-* Risultato riportato dall'utente: tutti i controlli positivi, tranne la presenza di `admin_path`, non ancora implementato. I campi employee/sessione sono leggibili, ma la validità della sessione non è stata verificata.
+* Risultato iniziale riportato dall'utente, prima della modifica: tutti i controlli positivi tranne la presenza di `admin_path`. Ora devono risultare positivi anche la presenza di `admin_path` e il confronto con il percorso atteso. La validità della sessione resta fuori da questa prova.
 * Verifiche locali superate: `php -l admin-cookie-check.php` e cinque casi sintetici con la crittografia del progetto (cookie valido, assente, cifrato invalido, checksum invalido, formato invalido). Nessun cookie o segreto reale usato nei test.
-* Prova reale nel browser completata con esito positivo prima dello spostamento dello script. Prossimo passo: scegliere il punto BO in cui scrivere `admin_path` e il modo minimo di leggerlo nel FO senza modificare il cookie Admin.
+* La prima prova reale nel browser è stata completata con esito positivo prima dello spostamento dello script. La nuova prova sul percorso salvato dal BO è ancora da eseguire. Controllare anche che la risposta diagnostica non emetta un `Set-Cookie` per il nome HTTP di `psAdmin`; eventuali cookie FO appartengono al normale bootstrap del negozio.
 * Chiarimento discusso: `Context::getContext()->cookie` nel FO espone il cookie cliente (`ps-s<ID>` oppure `ps-sg<ID>`), non `psAdmin`. La lettura Admin deve essere separata, senza sostituire il cookie cliente nel Context.
 
 ### Documentazione PrestaShop da usare
