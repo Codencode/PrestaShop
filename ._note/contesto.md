@@ -176,6 +176,8 @@ In `classes/Employee.php` è stato verificato che `Employee::isLoggedBack()` usa
 
 Mostrare una barra minimale nel Front Office solamente quando lo Step 2 restituisce un employee BO valido.
 
+L'Admin Bar è una nuova funzionalità sperimentale: deve essere protetta da una feature flag, disattivata per impostazione predefinita. Il controllo della flag deve avvenire prima di chiamare `AdminEmployeeContextProvider`, così quando la funzione è disattivata non vengono letti la sessione BO né eseguita la query di validazione. La stessa flag deve governare anche le future azioni contestuali dello Step 4.
+
 In questa fase verificare solamente:
 
 * employee BO valido → barra visibile;
