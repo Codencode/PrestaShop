@@ -193,6 +193,10 @@ Implementazione temporanea presente: `FrontController::smartyOutputContent()` ve
 
 ### Step 4 — Prime azioni contestuali
 
+A causa del contesto FO, non generare direttamente URL di route BO: `Link::getAdminLink()` restituisce esplicitamente una stringa vuota quando `_PS_ADMIN_DIR_` non è definito. Anche se il router Symfony FO conoscesse una route BO, non possiede il contesto del prefisso Admin né può generare in modo affidabile il token URL BO. Per ogni azione dell'Admin Bar il FO deve quindi costruire soltanto il link verso un endpoint BO stabile, usando `admin_path`; un controller BO dedicato deve validare l'azione richiesta, generare la route finale nel proprio contesto e reindirizzare.
+
+Il controller BO non deve mai accettare una route Symfony arbitraria dal parametro della richiesta. Deve usare una whitelist/mappa server-side, per esempio `product_edit` → `admin_product_form`, e validare i parametri strettamente necessari (come l'id prodotto). L'autenticazione e le autorizzazioni BO devono restare applicate sia al redirector sia alla destinazione finale.
+
 Aggiungere progressivamente:
 
 1. modifica prodotto;
