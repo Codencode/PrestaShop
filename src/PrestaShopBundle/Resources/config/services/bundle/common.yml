@@ -5,6 +5,15 @@ services:
 
   PrestaShop\PrestaShop\Adapter\Security\NativeAdminSessionReader: ~
 
+  PrestaShop\PrestaShop\Adapter\Security\AdminPathProvider: ~
+
+  PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPageContextFactory: ~
+
+  PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarActionResolver:
+    arguments:
+      $providers: !tagged_iterator prestashop.admin_bar.action_provider
+    public: true
+
   PrestaShop\PrestaShop\Core\Security\AdminSessionReaderInterface:
     alias: PrestaShop\PrestaShop\Adapter\Security\NativeAdminSessionReader
 
