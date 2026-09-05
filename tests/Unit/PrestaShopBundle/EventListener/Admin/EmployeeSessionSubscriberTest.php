@@ -81,6 +81,8 @@ final class EmployeeSessionSubscriberTest extends TestCase
         self::assertSame(42, $cookie->id_employee);
         self::assertSame(7, $cookie->session_id);
         self::assertSame('session-token', $cookie->session_token);
+        self::assertGreaterThanOrEqual(time() - 5, $token->getAttribute(TokenAttributes::LAST_ADMIN_ACTIVITY));
+        self::assertLessThanOrEqual(time(), $token->getAttribute(TokenAttributes::LAST_ADMIN_ACTIVITY));
     }
 
     public static function getAdminRequests(): iterable

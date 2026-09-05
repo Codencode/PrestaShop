@@ -19,6 +19,36 @@ Questo file serve a riprendere il lavoro in altre chat senza dipendere dalla cro
 * Test aggiunto: `tests/Unit/PrestaShopBundle/EventListener/Admin/EmployeeSessionSubscriberTest.php`. Superati 11 test / 41 asserzioni con PHP 8.1: login e richieste autenticate per root, sottocartella, URL legacy/Symfony con e senza `index.php`, aggiornamento del vecchio percorso dopo rinomina e assenza del nuovo campo per richieste anonime. PHPUnit segnala soltanto lo schema XML preesistente deprecato.
 * PHP CS Fixer sui due file Core/test non ha richiesto correzioni; PHPStan mirato agli stessi file con la configurazione del progetto è passato senza errori. Sintassi della diagnostica verificata e sei casi sintetici superati, incluso il confronto con un percorso atteso errato.
 
+### Stato dello Step 2 — validazione employee FO
+
+È in corso un componente separato `AdminEmployeeContextProvider`, senza barra o azioni FO. La validazione non considera mai sufficiente `psAdmin`, `admin_path` o i campi del cookie Admin: legge il token Symfony già conservato nella sessione PHP lato server e lo confronta con database e configurazione correnti.
+
+* Errore corretto durante lo sviluppo: il primo tentativo di rendere disponibile `PrestaShopBundle\Entity\Repository\EmployeeRepository` nel container FO legacy falliva perché dipende da `InternationalizedDomainNameConverter`, definito nel servizio Core non importato in tale container. Anche se fosse possibile importarlo, questo accoppierebbe il FO al repository Doctrine e al provider BO senza necessità.
+* Decisione: non usare `EmployeeRepository` né `EmployeeProvider` nel FO. Le loro definizioni sono rimaste nei file BO originali `bundle/repository.yml` e `bundle/security.yml`; non sono registrate in `bundle/common.yml`.
+* Il provider FO usa invece `doctrine.dbal.default_connection` e QueryBuilder con query parametrizzata su `{prefix}employee` e `{prefix}employee_session`. Verifica employee esistente e attivo, id, email, password hash, profilo, id/token della sessione persistita; una modifica password/profilo, disattivazione o revoca della sessione invalida il contesto FO.
+* `NativeAdminSessionReader` legge la sessione PHP esistente in sola lettura, senza cookie, cache headers, garbage collection, `write()` o `updateTimestamp()`. Il token è deserializzato solo dal server e accettato esclusivamente per i token BO conosciuti del firewall `main`. Valori non conformi falliscono chiusi.
+* Interfaccia FO legacy: `AdminEmployeeContextProvider::getContext()` non richiede una `Request` Symfony. Il provider e il reader usano internamente `$_COOKIE` e `$_SERVER['REMOTE_ADDR']`, già disponibili nel bootstrap legacy.
+* Uso temporaneo in un controller FO legacy, dopo il bootstrap:
+
+  ```php
+  /** @var PrestaShop\PrestaShop\Adapter\Security\AdminEmployeeContextProvider $provider */
+  $provider = $this->get(PrestaShop\PrestaShop\Adapter\Security\AdminEmployeeContextProvider::class);
+  $adminEmployeeContext = $provider->getContext();
+
+  if ($adminEmployeeContext !== null) {
+      $employeeId = $adminEmployeeContext->getEmployeeId();
+      $profileId = $adminEmployeeContext->getProfileId();
+  }
+  ```
+
+  `null` significa che non esiste una sessione BO valida. Non passare una `Request`, non leggere il cookie Admin dal `Context` FO e non esporre id o profilo al browser. Questo esempio non definisce ancora il punto condiviso dell'Admin Bar nello Step 3.
+* `EmployeeSessionSubscriber` salva `LAST_ADMIN_ACTIVITY` esclusivamente sulle richieste BO autenticate. Il provider FO la confronta con il lifetime BO senza aggiornarla; questo evita che la navigazione FO prolunghi la validità usata dall'Admin Bar. Resta da valutare separatamente l'effetto preesistente del bootstrap FO sulla durata della sessione PHP condivisa.
+* Se `PS_COOKIE_CHECKIP` è attivo, il provider richiede la corrispondenza con l'IP memorizzato dal BO. Non usa `Employee::isLoggedBack()`.
+* Verifica reale eseguita dall'utente: in `controllers/front/IndexController.php` ha aggiunto temporaneamente il recupero del servizio con `$this->get(AdminEmployeeContextProvider::class)` e la chiamata `getContext()`, senza `Request`; il risultato è stato verificato nel FO. Il file contiene un TODO che documenta l'errore iniziale di `EmployeeRepository`, corretto successivamente. Questa integrazione è soltanto diagnostica, limitata alla home, e va rimossa prima dello Step 3.
+* Test presenti in `tests/Unit/Adapter/Security/`: 24 scenari di validazione e 3 del reader di sessione, più gli 11 test dello Step 1. Ultima esecuzione: 42 test, 150 asserzioni superate; PHP CS Fixer applicato. Il container Admin espone il servizio correttamente. L'ultima analisi PHPStan è stata rifiutata automaticamente dall'ambiente dopo la correzione finale; ripeterla quando disponibile.
+
+La verifica base reale del provider nel FO è completata. Prima dello Step 3 rimuovere il codice diagnostico da `IndexController`; poi collegare il provider a un punto condiviso del FO per mostrare una barra minimale. Cache e autorizzazioni delle azioni restano Step 3 e 4.
+
 ### Valutazione di sicurezza discussa
 
 Il riuso di `psAdmin` per il solo percorso BO è una soluzione ragionevole da approfondire, mantenendo invariata l'esposizione attuale del cookie. Nella configurazione provata il cookie è già inviato al FO: aggiungere `admin_path` non richiede di ampliare domain/path. La prova diagnostica conferma la fattibilità tecnica, non certifica la sicurezza dell'implementazione futura.

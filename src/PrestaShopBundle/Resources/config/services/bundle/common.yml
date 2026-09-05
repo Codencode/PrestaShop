@@ -3,6 +3,19 @@ services:
   _defaults:
     public: false
 
+  PrestaShop\PrestaShop\Adapter\Security\NativeAdminSessionReader: ~
+
+  PrestaShop\PrestaShop\Core\Security\AdminSessionReaderInterface:
+    alias: PrestaShop\PrestaShop\Adapter\Security\NativeAdminSessionReader
+
+  PrestaShop\PrestaShop\Adapter\Security\AdminEmployeeContextProvider:
+    arguments:
+      - '@PrestaShop\PrestaShop\Core\Security\AdminSessionReaderInterface'
+      - '@prestashop.adapter.legacy.configuration'
+      - '@doctrine.dbal.default_connection'
+      - '%database_prefix%'
+    public: true
+
   PrestaShopBundle\Entity\Repository\FeatureFlagRepository:
     factory: [ '@doctrine.orm.default_entity_manager', getRepository ]
     arguments:
