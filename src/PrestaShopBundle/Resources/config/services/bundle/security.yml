@@ -5,9 +5,6 @@ services:
   _defaults:
     public: true
 
-  PrestaShopBundle\Security\Admin\EmployeeProvider:
-    autowire: true
-
   prestashop.security.admin.provider:
     alias: PrestaShopBundle\Security\Admin\EmployeeProvider
 

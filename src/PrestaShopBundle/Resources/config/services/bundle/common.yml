@@ -3,6 +3,31 @@ services:
   _defaults:
     public: false
 
+  PrestaShopBundle\Entity\Repository\EmployeeRepository:
+    factory: [ '@doctrine.orm.default_entity_manager', getRepository ]
+    arguments:
+      - PrestaShopBundle\Entity\Employee\Employee
+    calls:
+      - setIdnConverter: [ '@PrestaShop\PrestaShop\Core\Util\InternationalizedDomainNameConverter' ]
+    public: true
+
+  PrestaShopBundle\Security\Admin\EmployeeProvider:
+    arguments:
+      - '@PrestaShopBundle\Entity\Repository\EmployeeRepository'
+    public: true
+
+  PrestaShop\PrestaShop\Adapter\Security\NativeAdminSessionReader: ~
+
+  PrestaShop\PrestaShop\Core\Security\AdminSessionReaderInterface:
+    alias: PrestaShop\PrestaShop\Adapter\Security\NativeAdminSessionReader
+
+  PrestaShop\PrestaShop\Adapter\Security\AdminEmployeeContextProvider:
+    arguments:
+      - '@PrestaShop\PrestaShop\Core\Security\AdminSessionReaderInterface'
+      - '@PrestaShopBundle\Security\Admin\EmployeeProvider'
+      - '@prestashop.adapter.legacy.configuration'
+    public: true
+
   PrestaShopBundle\Entity\Repository\FeatureFlagRepository:
     factory: [ '@doctrine.orm.default_entity_manager', getRepository ]
     arguments:

@@ -240,6 +240,9 @@ class EmployeeSessionSubscriber implements EventSubscriberInterface
         // Routing metadata for the front office, not proof of employee authentication.
         $legacyCookie->admin_path = $request->getBasePath() . '/';
 
+        // Keep FO validation independent of activity in the shared PHP session.
+        $this->security->getToken()?->setAttribute(TokenAttributes::LAST_ADMIN_ACTIVITY, time());
+
         // Mimic AdminLogin login action
         $legacyCookie->remote_addr = (int) ip2long($request->getClientIp());
         $employee = $this->security->getUser();
