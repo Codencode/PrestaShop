@@ -775,11 +775,21 @@ class FrontControllerCore extends Controller
         Hook::exec('actionOutput' . $this->getControllerName() . 'HTMLBefore', ['html' => &$html]);
         // TODO <cnc> ===== Front admin bar ===== FrontController::smartyOutputContent() - codice temporaneo
         // serve per stampare la bar, ma andrà inserito nei template
-        $adminEmployeeContextProvider = $this->get(PrestaShop\PrestaShop\Adapter\Security\AdminEmployeeContextProvider::class);
-        if ($adminEmployeeContextProvider->getContext() !== null) {
-            $adminBar = '<div style="position:fixed;right:0;bottom:0;left:0;z-index:2147483647;padding:8px 16px;background:#2b2b2b;color:#fff;font:14px/20px Arial,sans-serif;text-align:center">PrestaShop Admin</div>';
+        $featureFlagEnabled = false;
+        try {
+            $featureFlagStateChecker = $this->get(PrestaShop\PrestaShop\Core\FeatureFlag\FeatureFlagStateCheckerInterface::class);
+            $featureFlagEnabled = $featureFlagStateChecker->isEnabled(PrestaShop\PrestaShop\Core\FeatureFlag\FeatureFlagSettings::FEATURE_FLAG_FRONT_OFFICE_ADMIN_BAR);
+        } catch (\Throwable) {
+            // A missing or unreadable experimental flag must not affect Front Office output.
+        }
 
-            $html =  preg_replace('~</body\s*>~i', $adminBar . '$0', $html, 1) ?? $html;
+        if ($featureFlagEnabled) {
+            $adminEmployeeContextProvider = $this->get(PrestaShop\PrestaShop\Adapter\Security\AdminEmployeeContextProvider::class);
+            if ($adminEmployeeContextProvider->getContext() !== null) {
+                $adminBar = '<div style="position:fixed;right:0;bottom:0;left:0;z-index:2147483647;padding:8px 16px;background:#2b2b2b;color:#fff;font:14px/20px Arial,sans-serif;text-align:center">PrestaShop Admin</div>';
+
+                $html =  preg_replace('~</body\s*>~i', $adminBar . '$0', $html, 1) ?? $html;
+            }
         }
         ///////////////////////////////////////////////////////////////////////////////////
 

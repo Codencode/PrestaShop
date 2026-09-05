@@ -14,6 +14,7 @@ use PHPUnit\Framework\TestCase;
 use PrestaShop\PrestaShop\Adapter\LegacyContext;
 use PrestaShop\PrestaShop\Core\ConfigurationInterface;
 use PrestaShop\PrestaShop\Core\Context\EmployeeContextBuilder;
+use PrestaShop\PrestaShop\Core\FeatureFlag\FeatureFlagStateCheckerInterface;
 use PrestaShopBundle\Entity\Employee\Employee;
 use PrestaShopBundle\Entity\Employee\EmployeeSession;
 use PrestaShopBundle\Entity\Employee\Profile;
@@ -137,7 +138,8 @@ final class EmployeeSessionSubscriberTest extends TestCase
             $this->createMock(RouterInterface::class),
             $configuration,
             $this->createMock(TranslatorInterface::class),
-            $this->createMock(EmployeeContextBuilder::class)
+            $this->createMock(EmployeeContextBuilder::class),
+            $this->createConfiguredMock(FeatureFlagStateCheckerInterface::class, ['isEnabled' => true])
         );
     }
 }

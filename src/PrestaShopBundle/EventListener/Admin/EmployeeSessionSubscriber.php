@@ -10,6 +10,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use PrestaShop\PrestaShop\Adapter\LegacyContext;
 use PrestaShop\PrestaShop\Core\ConfigurationInterface;
 use PrestaShop\PrestaShop\Core\Context\EmployeeContextBuilder;
+use PrestaShop\PrestaShop\Core\FeatureFlag\FeatureFlagSettings;
+use PrestaShop\PrestaShop\Core\FeatureFlag\FeatureFlagStateCheckerInterface;
 use PrestaShopBundle\Entity\Employee\Employee;
 use PrestaShopBundle\Entity\Employee\EmployeeSession;
 use PrestaShopBundle\Entity\Repository\EmployeeRepository;
@@ -55,6 +57,7 @@ class EmployeeSessionSubscriber implements EventSubscriberInterface
         private readonly ConfigurationInterface $configuration,
         private readonly TranslatorInterface $translator,
         private readonly EmployeeContextBuilder $employeeContextBuilder,
+        private readonly FeatureFlagStateCheckerInterface $featureFlagStateChecker,
     ) {
     }
 
@@ -237,11 +240,13 @@ class EmployeeSessionSubscriber implements EventSubscriberInterface
     {
         $legacyCookie = $this->legacyContext->getContext()->cookie;
 
-        // Routing metadata for the front office, not proof of employee authentication.
-        $legacyCookie->admin_path = $request->getBasePath() . '/';
+        if ($this->isFrontOfficeAdminBarEnabled()) {
+            // Routing metadata for the front office, not proof of employee authentication.
+            $legacyCookie->admin_path = $request->getBasePath() . '/';
 
-        // Keep FO validation independent of activity in the shared PHP session.
-        $this->security->getToken()?->setAttribute(TokenAttributes::LAST_ADMIN_ACTIVITY, time());
+            // Keep FO validation independent of activity in the shared PHP session.
+            $this->security->getToken()?->setAttribute(TokenAttributes::LAST_ADMIN_ACTIVITY, time());
+        }
 
         // Mimic AdminLogin login action
         $legacyCookie->remote_addr = (int) ip2long($request->getClientIp());
@@ -263,6 +268,15 @@ class EmployeeSessionSubscriber implements EventSubscriberInterface
 
         if ($write) {
             $legacyCookie->write();
+        }
+    }
+
+    private function isFrontOfficeAdminBarEnabled(): bool
+    {
+        try {
+            return $this->featureFlagStateChecker->isEnabled(FeatureFlagSettings::FEATURE_FLAG_FRONT_OFFICE_ADMIN_BAR);
+        } catch (\Throwable) {
+            return false;
         }
     }
 }

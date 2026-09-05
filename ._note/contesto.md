@@ -5,7 +5,7 @@
 Questo file serve a riprendere il lavoro in altre chat senza dipendere dalla cronologia della conversazione. Leggerlo per acquisire il contesto non implica avviare automaticamente l'implementazione: seguire la richiesta della chat corrente.
 
 * Il contesto è stato letto e discusso: obiettivo, separazione degli step e distinzione fra routing e autenticazione sono chiari.
-* Primo incremento dello **Step 1** implementato: scrittura di `admin_path` nel BO e confronto del suo valore nella diagnostica FO. Consultati `config/config.inc.php`, `classes/Cookie.php`, `classes/PhpEncryption.php`, `classes/PhpEncryptionEngine.php` ed `EmployeeSessionSubscriber`, oltre alla documentazione pertinente in `.ai`. Autenticazione FO employee e Admin Bar non sono state implementate.
+* Primo incremento dello **Step 1** implementato: scrittura di `admin_path` nel BO e confronto del suo valore nella diagnostica FO. Consultati `config/config.inc.php`, `classes/Cookie.php`, `classes/PhpEncryption.php`, `classes/PhpEncryptionEngine.php` ed `EmployeeSessionSubscriber`, oltre alla documentazione pertinente in `.ai`. La scrittura è ora condizionata dalla feature flag dell'Admin Bar.
 * Il BO crea `Cookie('psAdmin', '', ...)`: il path deriva dalla `physical_uri` dello shop e il nome HTTP effettivo è `PrestaShop-<hash>`. Il contenuto è cifrato e il cookie è HttpOnly. Il cookie nel Context FO è invece quello cliente.
 * Prima della modifica Core, l'utente ha completato la prova nel browser: ricezione, decifratura, formato, checksum e presenza dei campi employee/sessione hanno dato esito positivo; solo `admin_path` risultava assente, come previsto. Questo verifica la lettura del cookie BO nella sua installazione, non la validità della sessione employee.
 * Resta da effettuare la prova nel browser dopo la modifica Core, verificando il valore effettivo di `admin_path`. Non considerare ancora completato lo Step 1 e non estendere automaticamente l'esito ad altri domini, percorsi o configurazioni multistore. Il lettore applicativo definitivo FO non è ancora stato introdotto: questo incremento usa la diagnostica per dimostrare il trasferimento del dato.
@@ -13,7 +13,7 @@ Questo file serve a riprendere il lavoro in altre chat senza dipendere dalla cro
 
 ### Implementazione corrente dello Step 1
 
-* Modifica minima in `src/PrestaShopBundle/EventListener/Admin/EmployeeSessionSubscriber.php`, metodo `updateLegacyCookie()`: `$legacyCookie->admin_path = $request->getBasePath() . '/';`.
+* Modifica minima in `src/PrestaShopBundle/EventListener/Admin/EmployeeSessionSubscriber.php`, metodo `updateLegacyCookie()`: quando `front_office_admin_bar` è attiva, `$legacyCookie->admin_path = $request->getBasePath() . '/';`.
 * Il subscriber è già registrato in `app/config/admin/services.yml`. Il metodo viene chiamato dopo il login riuscito e durante le richieste BO autenticate, quindi aggiorna anche i cookie di sessioni già aperte e un eventuale percorso precedente. La scrittura HTTP resta affidata al ciclo BO esistente.
 * `Request::getBasePath()` ricava il percorso URL base del BO, includendo la sottocartella dell'installazione ed escludendo `index.php` e la route corrente. Il FO non deve conoscere `_PS_ADMIN_DIR_`. Nessuna modifica a domain/path/flag del cookie, al bootstrap FO o alle definizioni dei servizi.
 * Test aggiunto: `tests/Unit/PrestaShopBundle/EventListener/Admin/EmployeeSessionSubscriberTest.php`. Superati 11 test / 41 asserzioni con PHP 8.1: login e richieste autenticate per root, sottocartella, URL legacy/Symfony con e senza `index.php`, aggiornamento del vecchio percorso dopo rinomina e assenza del nuovo campo per richieste anonime. PHPUnit segnala soltanto lo schema XML preesistente deprecato.
@@ -42,7 +42,7 @@ Questo file serve a riprendere il lavoro in altre chat senza dipendere dalla cro
   ```
 
   `null` significa che non esiste una sessione BO valida. Non passare una `Request`, non leggere il cookie Admin dal `Context` FO e non esporre id o profilo al browser. Questo esempio non definisce ancora il punto condiviso dell'Admin Bar nello Step 3.
-* `EmployeeSessionSubscriber` salva `LAST_ADMIN_ACTIVITY` esclusivamente sulle richieste BO autenticate. Il provider FO la confronta con il lifetime BO senza aggiornarla; questo evita che la navigazione FO prolunghi la validità usata dall'Admin Bar. Resta da valutare separatamente l'effetto preesistente del bootstrap FO sulla durata della sessione PHP condivisa.
+* Quando `front_office_admin_bar` è attiva, `EmployeeSessionSubscriber` salva `LAST_ADMIN_ACTIVITY` esclusivamente sulle richieste BO autenticate. Il provider FO la confronta con il lifetime BO senza aggiornarla; questo evita che la navigazione FO prolunghi la validità usata dall'Admin Bar. Resta da valutare separatamente l'effetto preesistente del bootstrap FO sulla durata della sessione PHP condivisa.
 * Se `PS_COOKIE_CHECKIP` è attivo, il provider richiede la corrispondenza con l'IP memorizzato dal BO. Non usa `Employee::isLoggedBack()`.
 * Verifica reale eseguita dall'utente: in `controllers/front/IndexController.php` ha aggiunto temporaneamente il recupero del servizio con `$this->get(AdminEmployeeContextProvider::class)` e la chiamata `getContext()`, senza `Request`; il risultato è stato verificato nel FO. Il codice diagnostico è stato poi rimosso dalla home.
 * Test presenti in `tests/Unit/Adapter/Security/`: 24 scenari di validazione e 3 del reader di sessione, più gli 11 test dello Step 1. Ultima esecuzione: 42 test, 150 asserzioni superate; PHP CS Fixer applicato. Il container Admin espone il servizio correttamente. L'ultima analisi PHPStan è stata rifiutata automaticamente dall'ambiente dopo la correzione finale; ripeterla quando disponibile.
@@ -176,7 +176,7 @@ In `classes/Employee.php` è stato verificato che `Employee::isLoggedBack()` usa
 
 Mostrare una barra minimale nel Front Office solamente quando lo Step 2 restituisce un employee BO valido.
 
-L'Admin Bar è una nuova funzionalità sperimentale: deve essere protetta da una feature flag, disattivata per impostazione predefinita. Il controllo della flag deve avvenire prima di chiamare `AdminEmployeeContextProvider`, così quando la funzione è disattivata non vengono letti la sessione BO né eseguita la query di validazione. La stessa flag deve governare anche le future azioni contestuali dello Step 4.
+L'Admin Bar è una nuova funzionalità sperimentale, protetta dalla feature flag beta `front_office_admin_bar`, disattivata per impostazione predefinita (`state="0"`). È registrata in `install-dev/data/xml/feature_flag.xml` come `env,dotenv,db` ed esposta dalla costante `FeatureFlagSettings::FEATURE_FLAG_FRONT_OFFICE_ADMIN_BAR`. Ogni codice introdotto esclusivamente per l'Admin Bar, sia nel FO sia nel BO, deve essere eseguito soltanto quando questa flag è attiva; servizi e classi possono restare registrati se non producono effetti né vengono chiamati. Il controllo avviene prima di chiamare `AdminEmployeeContextProvider`, così quando la funzione è disattivata non vengono letti la sessione BO né eseguita la query di validazione. Il medesimo controllo nel subscriber BO impedisce la scrittura di `admin_path` e `LAST_ADMIN_ACTIVITY`. Se la flag non è disponibile o non è leggibile, il FO non mostra la barra e il BO non salva questi dati. La stessa flag deve governare anche le future azioni contestuali dello Step 4.
 
 In questa fase verificare solamente:
 
@@ -189,7 +189,7 @@ Verificare inoltre che la cache delle pagine non renda visibili barra o link amm
 
 Non aggiungere ancora azioni contestuali.
 
-Implementazione temporanea presente: `FrontController::smartyOutputContent()` invoca il provider dopo il rendering completo della pagina e, se restituisce un contesto valido, inserisce una barra con formattazione inline subito prima di `</body>`. Il metodo contiene il commento evidente `TODO: move the admin bar markup into the front-office layout template.`: questa iniezione nell'HTML serve solo per la fase corrente e dovrà essere sostituita dall'integrazione nel layout Smarty. Non usare `echo` separati nei controller specifici.
+Implementazione temporanea presente: `FrontController::smartyOutputContent()` verifica prima la feature flag e poi invoca il provider dopo il rendering completo della pagina; se restituisce un contesto valido, inserisce una barra con formattazione inline subito prima di `</body>`. Il metodo conserva il TODO `FrontController::smartyOutputContent() - codice temporaneo`, che indica la futura integrazione nel layout Smarty. Non usare `echo` separati nei controller specifici.
 
 ### Step 4 — Prime azioni contestuali
 
