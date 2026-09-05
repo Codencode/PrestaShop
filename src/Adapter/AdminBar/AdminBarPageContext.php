@@ -14,6 +14,7 @@ final class AdminBarPageContext
         private readonly object $controller,
         private readonly string $pageName,
         private readonly ?int $resourceId = null,
+        private readonly ?string $resourceType = null,
     ) {
     }
 

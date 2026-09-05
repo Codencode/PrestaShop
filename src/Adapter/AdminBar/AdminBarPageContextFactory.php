@@ -10,10 +10,17 @@ namespace PrestaShop\PrestaShop\Adapter\AdminBar;
 
 final class AdminBarPageContextFactory
 {
+    /** @param iterable<AdminBarResourceProviderInterface> $resourceProviders */
+    public function __construct(private readonly iterable $resourceProviders)
+    {
+    }
+
     public function create(object $controller): ?AdminBarPageContext
     {
         // TODO <cnc> ===== Front admin bar ===== AdminBarPageContextFactory::create() - DA VERIFICARE
-        // I controller risorsa devono esporre esplicitamente il proprio ID, senza usare Tools o la request.
+        // TODO <cnc-notice> ===== Front admin bar ===== AdminBarPageContextFactory::create() ///////////////////////// SONO ARRIVATO QUI
+        // Arrivati: provider taggati per prodotto, categoria e CMS; la factory non conosce i controller concreti.
+        // Proseguire: aggiungere permission checker DBAL, provider Core dell'azione e redirector BO.
         if (!method_exists($controller, 'getControllerName')) {
             return null;
         }
@@ -21,6 +28,13 @@ final class AdminBarPageContextFactory
         $pageName = $controller->getControllerName();
         if (!is_string($pageName) || $pageName === '') {
             return null;
+        }
+
+        foreach ($this->resourceProviders as $resourceProvider) {
+            $resource = $resourceProvider->getResource($controller);
+            if ($resource !== null) {
+                return new AdminBarPageContext($controller, $pageName, $resource->getId(), $resource->getType());
+            }
         }
 
         return new AdminBarPageContext($controller, $pageName);
