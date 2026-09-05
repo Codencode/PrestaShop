@@ -44,10 +44,10 @@ Questo file serve a riprendere il lavoro in altre chat senza dipendere dalla cro
   `null` significa che non esiste una sessione BO valida. Non passare una `Request`, non leggere il cookie Admin dal `Context` FO e non esporre id o profilo al browser. Questo esempio non definisce ancora il punto condiviso dell'Admin Bar nello Step 3.
 * `EmployeeSessionSubscriber` salva `LAST_ADMIN_ACTIVITY` esclusivamente sulle richieste BO autenticate. Il provider FO la confronta con il lifetime BO senza aggiornarla; questo evita che la navigazione FO prolunghi la validità usata dall'Admin Bar. Resta da valutare separatamente l'effetto preesistente del bootstrap FO sulla durata della sessione PHP condivisa.
 * Se `PS_COOKIE_CHECKIP` è attivo, il provider richiede la corrispondenza con l'IP memorizzato dal BO. Non usa `Employee::isLoggedBack()`.
-* Verifica reale eseguita dall'utente: in `controllers/front/IndexController.php` ha aggiunto temporaneamente il recupero del servizio con `$this->get(AdminEmployeeContextProvider::class)` e la chiamata `getContext()`, senza `Request`; il risultato è stato verificato nel FO. Il file contiene un TODO che documenta l'errore iniziale di `EmployeeRepository`, corretto successivamente. Questa integrazione è soltanto diagnostica, limitata alla home, e va rimossa prima dello Step 3.
+* Verifica reale eseguita dall'utente: in `controllers/front/IndexController.php` ha aggiunto temporaneamente il recupero del servizio con `$this->get(AdminEmployeeContextProvider::class)` e la chiamata `getContext()`, senza `Request`; il risultato è stato verificato nel FO. Il codice diagnostico è stato poi rimosso dalla home.
 * Test presenti in `tests/Unit/Adapter/Security/`: 24 scenari di validazione e 3 del reader di sessione, più gli 11 test dello Step 1. Ultima esecuzione: 42 test, 150 asserzioni superate; PHP CS Fixer applicato. Il container Admin espone il servizio correttamente. L'ultima analisi PHPStan è stata rifiutata automaticamente dall'ambiente dopo la correzione finale; ripeterla quando disponibile.
 
-La verifica base reale del provider nel FO è completata. Prima dello Step 3 rimuovere il codice diagnostico da `IndexController`; poi collegare il provider a un punto condiviso del FO per mostrare una barra minimale. Cache e autorizzazioni delle azioni restano Step 3 e 4.
+La verifica base reale del provider nel FO è completata. Il codice diagnostico da `IndexController` è stato rimosso e lo Step 3 usa ora il punto condiviso del Front Office. Cache e autorizzazioni delle azioni restano Step 3 e 4.
 
 ### Valutazione di sicurezza discussa
 
@@ -186,6 +186,8 @@ In questa fase verificare solamente:
 Verificare inoltre che la cache delle pagine non renda visibili barra o link amministrativi ad altri visitatori.
 
 Non aggiungere ancora azioni contestuali.
+
+Implementazione temporanea presente: `FrontController::smartyOutputContent()` invoca il provider dopo il rendering completo della pagina e, se restituisce un contesto valido, inserisce una barra con formattazione inline subito prima di `</body>`. Il metodo contiene il commento evidente `TODO: move the admin bar markup into the front-office layout template.`: questa iniezione nell'HTML serve solo per la fase corrente e dovrà essere sostituita dall'integrazione nel layout Smarty. Non usare `echo` separati nei controller specifici.
 
 ### Step 4 — Prime azioni contestuali
 
