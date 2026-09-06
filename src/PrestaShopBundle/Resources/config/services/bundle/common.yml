@@ -35,6 +35,10 @@ services:
     arguments:
       - '@PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPermissionChecker'
     tags: ['prestashop.admin_bar.action_provider']
+  PrestaShop\PrestaShop\Adapter\AdminBar\CategoryAdminBarActionProvider:
+    arguments:
+      - '@PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPermissionChecker'
+    tags: ['prestashop.admin_bar.action_provider']
   PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarActionResolver:
     arguments:
       $providers: !tagged_iterator prestashop.admin_bar.action_provider

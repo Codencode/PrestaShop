@@ -6,3 +6,12 @@ _admin_bar_product_edit:
     _legacy_controller: AdminProducts
   requirements:
     productId: \d+
+
+_admin_bar_category_edit:
+  path: /category/{categoryId}
+  methods: [ GET ]
+  defaults:
+    _controller: PrestaShopBundle\Controller\Admin\AdminBarController::editCategoryAction
+    _legacy_controller: AdminCategories
+  requirements:
+    categoryId: \d+

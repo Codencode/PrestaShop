@@ -17,7 +17,17 @@ final class AdminBarPermissionChecker
 
     public function canUpdateProducts(int $profileId): bool
     {
-        // TODO <cnc> ===== Front admin bar ===== AdminBarPermissionChecker::canUpdateProducts() - DA VERIFICARE
+        return $this->canUpdate($profileId, 'ADMINPRODUCTS');
+    }
+
+    public function canUpdateCategories(int $profileId): bool
+    {
+        return $this->canUpdate($profileId, 'ADMINCATEGORIES');
+    }
+
+    private function canUpdate(int $profileId, string $legacyController): bool
+    {
+        // TODO <cnc> ===== Front admin bar ===== AdminBarPermissionChecker::canUpdate() - DA VERIFICARE
         // Estendere solo quando un'azione Core concreta richiede un nuovo permesso.
         if ($profileId === _PS_ADMIN_PROFILE_) {
             return true;
@@ -31,7 +41,7 @@ final class AdminBarPermissionChecker
                 ->where('a.id_profile = :profileId')
                 ->andWhere('ar.slug LIKE :role')
                 ->setParameter('profileId', $profileId)
-                ->setParameter('role', 'ROLE_MOD_%_ADMINPRODUCTS_UPDATE')
+                ->setParameter('role', 'ROLE_MOD_%_' . $legacyController . '_UPDATE')
                 ->setMaxResults(1)
                 ->executeQuery()
                 ->fetchOne();

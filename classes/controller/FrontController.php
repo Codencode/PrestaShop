@@ -800,11 +800,23 @@ class FrontControllerCore extends Controller
                     $actionResolver = $this->get(PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarActionResolver::class);
                     foreach ($actionResolver->getActions($pageContext, $adminEmployeeContext) as $action) {
                         $parameters = $action->getParameters();
-                        if ($action->getName() !== 'product_edit' || !isset($parameters['product_id'])) {
+                        switch ($action->getName()) {
+                            case 'product_edit':
+                                $endpoint = 'product';
+                                $parameterName = 'product_id';
+                                break;
+                            case 'category_edit':
+                                $endpoint = 'category';
+                                $parameterName = 'category_id';
+                                break;
+                            default:
+                                continue 2;
+                        }
+                        if (!isset($parameters[$parameterName]) || (int) $parameters[$parameterName] <= 0) {
                             continue;
                         }
 
-                        $url = rtrim($adminPath, '/') . '/_admin-bar/product/' . (int) $parameters['product_id'];
+                        $url = rtrim($adminPath, '/') . '/_admin-bar/' . $endpoint . '/' . (int) $parameters[$parameterName];
                         $actionsHtml .= sprintf(
                             ' <a href="%s" style="margin-left:12px;color:#fff;text-decoration:underline" target="_blank">%s</a>',
                             htmlspecialchars($url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),

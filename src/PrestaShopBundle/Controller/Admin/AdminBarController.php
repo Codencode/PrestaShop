@@ -25,4 +25,16 @@ final class AdminBarController extends PrestaShopAdminController
 
         return $this->redirectToRoute('admin_product_form', ['id' => $productId]);
     }
+
+    #[AdminSecurity("is_granted('update', 'AdminCategories')", redirectRoute: 'admin_categories_index')]
+    public function editCategoryAction(int $categoryId): RedirectResponse
+    {
+        // TODO <cnc> ===== Front admin bar ===== AdminBarController::editCategoryAction() - DA VERIFICARE
+        // Aggiungere qui solo azioni esplicitamente mappate e protette dal relativo permesso BO.
+        if (!$this->getFeatureFlagStateChecker()->isEnabled(FeatureFlagSettings::FEATURE_FLAG_FRONT_OFFICE_ADMIN_BAR)) {
+            throw $this->createNotFoundException();
+        }
+
+        return $this->redirectToRoute('admin_categories_edit', ['categoryId' => $categoryId]);
+    }
 }
