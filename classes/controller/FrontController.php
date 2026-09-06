@@ -786,9 +786,21 @@ class FrontControllerCore extends Controller
         if ($featureFlagEnabled) {
             $adminEmployeeContextProvider = $this->get(PrestaShop\PrestaShop\Adapter\Security\AdminEmployeeContextProvider::class);
             if ($adminEmployeeContextProvider->getContext() !== null) {
-                $adminBar = '<div style="position:fixed;right:0;bottom:0;left:0;z-index:2147483647;padding:8px 16px;background:#2b2b2b;color:#fff;font:14px/20px Arial,sans-serif;text-align:center">PrestaShop Admin</div>';
+                // TODO <cnc> ===== Front admin bar ===== FrontController::smartyOutputContent() - DA VERIFICARE
+                // Verificare nel DOM page, resource-type e resource-id prodotti dalla factory.
+                $pageContextFactory = $this->get(PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPageContextFactory::class);
+                $pageContext = $pageContextFactory->create($this);
+                $pageName = $pageContext === null ? '' : $pageContext->getPageName();
+                $resourceType = $pageContext === null ? '' : $pageContext->getResourceType();
+                $resourceId = $pageContext === null ? '' : (string) ($pageContext->getResourceId() ?? '');
+                $adminBar = sprintf(
+                    '<div data-admin-bar-page="%s" data-admin-bar-resource-type="%s" data-admin-bar-resource-id="%s" style="position:fixed;right:0;bottom:0;left:0;z-index:2147483647;padding:8px 16px;background:#2b2b2b;color:#fff;font:14px/20px Arial,sans-serif;text-align:center">PrestaShop Admin</div>',
+                    htmlspecialchars($pageName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+                    htmlspecialchars($resourceType ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+                    htmlspecialchars($resourceId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                );
 
-                $html =  preg_replace('~</body\s*>~i', $adminBar . '$0', $html, 1) ?? $html;
+                $html = preg_replace('~</body\s*>~i', $adminBar . '$0', $html, 1) ?? $html;
             }
         }
         ///////////////////////////////////////////////////////////////////////////////////

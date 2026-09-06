@@ -16,9 +16,12 @@ services:
   PrestaShop\PrestaShop\Adapter\AdminBar\CmsAdminBarResourceProvider:
     tags: ['prestashop.admin_bar.resource_provider']
 
+  # // TODO <cnc> ===== Front admin bar ===== AdminBarPageContextFactory service definition - DA VERIFICARE
+  # Eliminare questa definizione pubblica quando la barra non recuperer� pi� il servizio dal FrontController.
   PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPageContextFactory:
     arguments:
       $resourceProviders: !tagged_iterator prestashop.admin_bar.resource_provider
+    public: true
 
   PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarActionResolver:
     arguments:

@@ -197,6 +197,21 @@ A causa del contesto FO, non generare direttamente URL di route BO: `Link::getAd
 
 Il controller BO non deve mai accettare una route Symfony arbitraria dal parametro della richiesta. Deve usare una whitelist/mappa server-side, per esempio `product_edit` â†’ `admin_product_form`, e validare i parametri strettamente necessari (come l'id prodotto). L'autenticazione e le autorizzazioni BO devono restare applicate sia al redirector sia alla destinazione finale.
 
+#### Stato reale dell'implementazione
+
+**Già usato:** `FrontController::smartyOutputContent()` mostra la barra solo con feature flag attiva e `AdminEmployeeContextProvider` valido.
+
+**Predisposto ma non ancora chiamato:** `AdminPathProvider`, `AdminBarPageContextFactory`, i provider risorsa prodotto/categoria/CMS, `AdminBarActionResolver` e `AdminBarActionProviderInterface`. Non producono oggi link o pulsanti.
+
+Flusso attuale:
+
+```text
+FrontController ? AdminEmployeeContextProvider ? barra minimale
+AdminBarPageContextFactory ? provider risorsa ? AdminBarActionResolver ? azione BO
+                         (non ancora collegati)
+```
+
+Da qui in avanti lavorare soltanto per incrementi completi e verificabili. Il prossimo incremento è esclusivamente **Modifica prodotto**: collegare factory e resolver al `FrontController`, applicare il permesso, creare il redirector BO e verificare il pulsante. Non estendere prima a categoria, CMS o moduli.
 Aggiungere progressivamente:
 
 1. modifica prodotto;

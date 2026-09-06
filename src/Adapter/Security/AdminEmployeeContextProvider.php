@@ -50,6 +50,9 @@ final class AdminEmployeeContextProvider
         }
 
         $lastActivity = $token->getAttribute(TokenAttributes::LAST_ADMIN_ACTIVITY);
+        if (is_string($lastActivity) && ctype_digit($lastActivity)) {
+            $lastActivity = (int) $lastActivity;
+        }
         $now = time();
         $hours = (int) $this->configuration->get('PS_COOKIE_LIFETIME_BO');
         $cookieLifetime = ($hours > 0 ? min($hours, CookieOptions::MAX_COOKIE_VALUE) : CookieOptions::MAX_COOKIE_VALUE) * 3600;

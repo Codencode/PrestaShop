@@ -32,4 +32,9 @@ final class AdminBarPageContext
     {
         return $this->resourceId;
     }
+
+    public function getResourceType(): ?string
+    {
+        return $this->resourceType;
+    }
 }
