@@ -795,28 +795,15 @@ class FrontControllerCore extends Controller
                 $resourceType = $pageContext === null ? '' : $pageContext->getResourceType();
                 $resourceId = $pageContext === null ? '' : (string) ($pageContext->getResourceId() ?? '');
                 $actionsHtml = '';
-                $adminPath = $this->get(PrestaShop\PrestaShop\Adapter\Security\AdminPathProvider::class)->getPath();
-                if ($pageContext !== null && $adminPath !== null) {
+                if ($pageContext !== null) {
                     $actionResolver = $this->get(PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarActionResolver::class);
+                    $actionUrlProvider = $this->get(PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarActionUrlProvider::class);
                     foreach ($actionResolver->getActions($pageContext, $adminEmployeeContext) as $action) {
-                        $parameters = $action->getParameters();
-                        switch ($action->getName()) {
-                            case 'product_edit':
-                                $endpoint = 'product';
-                                $parameterName = 'product_id';
-                                break;
-                            case 'category_edit':
-                                $endpoint = 'category';
-                                $parameterName = 'category_id';
-                                break;
-                            default:
-                                continue 2;
-                        }
-                        if (!isset($parameters[$parameterName]) || (int) $parameters[$parameterName] <= 0) {
+                        $url = $actionUrlProvider->getUrl($action);
+                        if ($url === null) {
                             continue;
                         }
 
-                        $url = rtrim($adminPath, '/') . '/_admin-bar/' . $endpoint . '/' . (int) $parameters[$parameterName];
                         $actionsHtml .= sprintf(
                             ' <a href="%s" style="margin-left:12px;color:#fff;text-decoration:underline" target="_blank">%s</a>',
                             htmlspecialchars($url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),

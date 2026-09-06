@@ -203,6 +203,8 @@ Il controller BO non deve mai accettare una route Symfony arbitraria dal paramet
 
 Il provider prodotto legge la risorsa con `ProductControllerCore::getProduct()` e restituisce `product_edit` solo al profilo che possiede il ruolo BO di aggiornamento prodotti. Il provider categoria restituisce `category_edit` solo con il ruolo BO di aggiornamento categorie. Questi controlli FO servono solo a decidere la visibilita dei pulsanti: le stesse autorizzazioni vengono controllate di nuovo nel BO.
 
+Il renderer temporaneo usa `AdminBarActionUrlProvider`, che contiene la whitelist tra nome azione, parametro e endpoint BO. Il `FrontController` non conosce piu le azioni concrete.
+
 I pulsanti puntano esclusivamente a `admin_path/_admin-bar/product/{id}` e `admin_path/_admin-bar/category/{id}`. Le route BO `_admin_bar_product_edit` e `_admin_bar_category_edit` iniziano con `_`, quindi non richiedono il token URL al primo accesso; non sono pubbliche: `AdminSecurity` richiede rispettivamente `update` su `AdminProducts` e `AdminCategories`. Se la feature flag e disattiva, il controller restituisce 404. Dopo il controllo il controller reindirizza alle route ufficiali `admin_product_form` e `admin_categories_edit`; il router BO aggiunge il token URL della destinazione.
 
 Il nome della rotta finale Symfony non arriva mai dal FO. Oggi esistono soltanto le azioni esplicite `product_edit` e `category_edit`; ogni nuova azione dovra avere una mappatura server-side, parametri strettamente validati e il proprio permesso BO. Non estendere ancora a CMS o moduli.

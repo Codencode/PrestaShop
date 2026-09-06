@@ -5,9 +5,13 @@ services:
 
   PrestaShop\PrestaShop\Adapter\Security\NativeAdminSessionReader: ~
 
-  # // TODO <cnc> ===== Front admin bar ===== AdminPathProvider service definition - DA VERIFICARE
-  # Eliminare questa definizione pubblica quando la barra non recuperera più il servizio dal FrontController.
-  PrestaShop\PrestaShop\Adapter\Security\AdminPathProvider:
+  PrestaShop\PrestaShop\Adapter\Security\AdminPathProvider: ~
+
+  # TODO <cnc> ===== Front admin bar ===== AdminBarActionUrlProvider service definition - DA VERIFICARE
+  # Eliminare questa definizione pubblica quando la barra non recuperera piu il servizio dal FrontController.
+  PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarActionUrlProvider:
+    arguments:
+      - '@PrestaShop\PrestaShop\Adapter\Security\AdminPathProvider'
     public: true
 
   PrestaShop\PrestaShop\Adapter\AdminBar\ProductAdminBarResourceProvider:
@@ -19,8 +23,8 @@ services:
   PrestaShop\PrestaShop\Adapter\AdminBar\CmsAdminBarResourceProvider:
     tags: ['prestashop.admin_bar.resource_provider']
 
-  # // TODO <cnc> ===== Front admin bar ===== AdminBarPageContextFactory service definition - DA VERIFICARE
-  # Eliminare questa definizione pubblica quando la barra non recuperer più il servizio dal FrontController.
+  # TODO <cnc> ===== Front admin bar ===== AdminBarPageContextFactory service definition - DA VERIFICARE
+  # Eliminare questa definizione pubblica quando la barra non recuperera piu il servizio dal FrontController.
   PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPageContextFactory:
     arguments:
       $resourceProviders: !tagged_iterator prestashop.admin_bar.resource_provider
