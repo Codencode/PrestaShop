@@ -16,7 +16,7 @@ final class AdminBarActionResolver
     public function getActions(AdminBarPageContext $pageContext, AdminEmployeeContext $employeeContext): array
     {
         // TODO <cnc> ===== Front admin bar ===== AdminBarActionResolver::getActions() - DA VERIFICARE
-        // Collegare le azioni restituite al renderer della barra e al redirector BO.
+        // Aggiungere solo provider le cui azioni abbiano un endpoint BO esplicitamente mappato.
         $actions = [];
         foreach ($this->providers as $provider) {
             foreach ($provider->getActions($pageContext, $employeeContext) as $action) {

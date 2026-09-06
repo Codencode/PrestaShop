@@ -5,7 +5,10 @@ services:
 
   PrestaShop\PrestaShop\Adapter\Security\NativeAdminSessionReader: ~
 
-  PrestaShop\PrestaShop\Adapter\Security\AdminPathProvider: ~
+  # // TODO <cnc> ===== Front admin bar ===== AdminPathProvider service definition - DA VERIFICARE
+  # Eliminare questa definizione pubblica quando la barra non recuperera più il servizio dal FrontController.
+  PrestaShop\PrestaShop\Adapter\Security\AdminPathProvider:
+    public: true
 
   PrestaShop\PrestaShop\Adapter\AdminBar\ProductAdminBarResourceProvider:
     tags: ['prestashop.admin_bar.resource_provider']
@@ -17,7 +20,7 @@ services:
     tags: ['prestashop.admin_bar.resource_provider']
 
   # // TODO <cnc> ===== Front admin bar ===== AdminBarPageContextFactory service definition - DA VERIFICARE
-  # Eliminare questa definizione pubblica quando la barra non recuperer� pi� il servizio dal FrontController.
+  # Eliminare questa definizione pubblica quando la barra non recuperer più il servizio dal FrontController.
   PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPageContextFactory:
     arguments:
       $resourceProviders: !tagged_iterator prestashop.admin_bar.resource_provider
@@ -29,6 +32,8 @@ services:
       - '%database_prefix%'
 
   PrestaShop\PrestaShop\Adapter\AdminBar\ProductAdminBarActionProvider:
+    arguments:
+      - '@PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPermissionChecker'
     tags: ['prestashop.admin_bar.action_provider']
   PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarActionResolver:
     arguments:

@@ -785,7 +785,8 @@ class FrontControllerCore extends Controller
 
         if ($featureFlagEnabled) {
             $adminEmployeeContextProvider = $this->get(PrestaShop\PrestaShop\Adapter\Security\AdminEmployeeContextProvider::class);
-            if ($adminEmployeeContextProvider->getContext() !== null) {
+            $adminEmployeeContext = $adminEmployeeContextProvider->getContext();
+            if ($adminEmployeeContext !== null) {
                 // TODO <cnc> ===== Front admin bar ===== FrontController::smartyOutputContent() - DA VERIFICARE
                 // Verificare nel DOM page, resource-type e resource-id prodotti dalla factory.
                 $pageContextFactory = $this->get(PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPageContextFactory::class);
@@ -793,11 +794,30 @@ class FrontControllerCore extends Controller
                 $pageName = $pageContext === null ? '' : $pageContext->getPageName();
                 $resourceType = $pageContext === null ? '' : $pageContext->getResourceType();
                 $resourceId = $pageContext === null ? '' : (string) ($pageContext->getResourceId() ?? '');
+                $actionsHtml = '';
+                $adminPath = $this->get(PrestaShop\PrestaShop\Adapter\Security\AdminPathProvider::class)->getPath();
+                if ($pageContext !== null && $adminPath !== null) {
+                    $actionResolver = $this->get(PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarActionResolver::class);
+                    foreach ($actionResolver->getActions($pageContext, $adminEmployeeContext) as $action) {
+                        $parameters = $action->getParameters();
+                        if ($action->getName() !== 'product_edit' || !isset($parameters['product_id'])) {
+                            continue;
+                        }
+
+                        $url = rtrim($adminPath, '/') . '/_admin-bar/product/' . (int) $parameters['product_id'];
+                        $actionsHtml .= sprintf(
+                            ' <a href="%s" style="margin-left:12px;color:#fff;text-decoration:underline" target="_blank">%s</a>',
+                            htmlspecialchars($url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+                            htmlspecialchars($action->getLabel(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                        );
+                    }
+                }
                 $adminBar = sprintf(
-                    '<div data-admin-bar-page="%s" data-admin-bar-resource-type="%s" data-admin-bar-resource-id="%s" style="position:fixed;right:0;bottom:0;left:0;z-index:2147483647;padding:8px 16px;background:#2b2b2b;color:#fff;font:14px/20px Arial,sans-serif;text-align:center">PrestaShop Admin</div>',
+                    '<div data-admin-bar-page="%s" data-admin-bar-resource-type="%s" data-admin-bar-resource-id="%s" style="position:fixed;right:0;bottom:0;left:0;z-index:2147483647;padding:8px 16px;background:#2b2b2b;color:#fff;font:14px/20px Arial,sans-serif;text-align:center">PrestaShop Admin%s</div>',
                     htmlspecialchars($pageName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
                     htmlspecialchars($resourceType ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-                    htmlspecialchars($resourceId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                    htmlspecialchars($resourceId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+                    $actionsHtml
                 );
 
                 $html = preg_replace('~</body\s*>~i', $adminBar . '$0', $html, 1) ?? $html;

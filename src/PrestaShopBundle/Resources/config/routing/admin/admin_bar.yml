@@ -1,0 +1,8 @@
+_admin_bar_product_edit:
+  path: /product/{productId}
+  methods: [ GET ]
+  defaults:
+    _controller: PrestaShopBundle\Controller\Admin\AdminBarController::editProductAction
+    _legacy_controller: AdminProducts
+  requirements:
+    productId: \d+

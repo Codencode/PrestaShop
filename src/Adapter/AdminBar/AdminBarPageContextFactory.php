@@ -19,8 +19,8 @@ final class AdminBarPageContextFactory
     {
         // TODO <cnc> ===== Front admin bar ===== AdminBarPageContextFactory::create() - DA VERIFICARE
         // TODO <cnc-notice> ===== Front admin bar ===== AdminBarPageContextFactory::create() ///////////////////////// SONO ARRIVATO QUI
-        // Arrivati: provider taggati per prodotto, categoria e CMS; la factory non conosce i controller concreti.
-        // Proseguire: aggiungere permission checker DBAL, provider Core dell'azione e redirector BO.
+        // Arrivati: product_edit usa la risorsa prodotto, il permesso FO e il redirector BO.
+        // Proseguire: verificare il flusso manuale e poi aggiungere un'azione esplicita per una nuova risorsa.
         if (!method_exists($controller, 'getControllerName')) {
             return null;
         }

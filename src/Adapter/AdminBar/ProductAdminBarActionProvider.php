@@ -15,7 +15,7 @@ final class ProductAdminBarActionProvider implements AdminBarActionProviderInter
     public function getActions(AdminBarPageContext $pageContext, AdminEmployeeContext $employeeContext): iterable
     {
         // TODO <cnc> ===== Front admin bar ===== ProductAdminBarActionProvider::getActions() - DA VERIFICARE
-        // Collegare product_edit al redirector BO dopo la sua implementazione.
+        // Il renderer FO deve accettare solo azioni con un endpoint BO esplicitamente mappato.
         if ($pageContext->getResourceType() !== 'product' || $pageContext->getResourceId() === null) {
             return [];
         }

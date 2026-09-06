@@ -199,45 +199,28 @@ Il controller BO non deve mai accettare una route Symfony arbitraria dal paramet
 
 #### Stato reale dell'implementazione
 
-**Gi� usato:** `FrontController::smartyOutputContent()` mostra la barra solo con feature flag attiva e `AdminEmployeeContextProvider` valido.
+**Gia usato:** `FrontController::smartyOutputContent()` mostra la barra solo con feature flag attiva e `AdminEmployeeContextProvider` valido. Nella pagina prodotto chiama anche `AdminBarPageContextFactory`, `AdminBarActionResolver` e `ProductAdminBarActionProvider`.
 
-**Predisposto ma non ancora chiamato:** `AdminPathProvider`, `AdminBarPageContextFactory`, i provider risorsa prodotto/categoria/CMS, `AdminBarActionResolver` e `AdminBarActionProviderInterface`. Non producono oggi link o pulsanti.
+Il provider prodotto legge la risorsa con `ProductControllerCore::getProduct()` e restituisce `product_edit` solo al profilo che possiede il ruolo BO di aggiornamento prodotti. Questo controllo FO serve solo a decidere la visibilita del pulsante: la stessa autorizzazione viene controllata di nuovo nel BO.
 
-Flusso attuale:
+Il pulsante punta esclusivamente a `admin_path/_admin-bar/product/{id}`. La route BO `_admin_bar_product_edit` inizia con `_`, quindi non richiede il token URL al primo accesso; non e pubblica: `AdminSecurity` richiede `update` su `AdminProducts`. Se la feature flag e disattiva, il controller restituisce 404. Dopo il controllo il controller `AdminBarController::editProductAction()` esegue `redirectToRoute('admin_product_form', ...)`; il router BO aggiunge il token URL della destinazione.
 
-```text
-FrontController ? AdminEmployeeContextProvider ? barra minimale
-AdminBarPageContextFactory ? provider risorsa ? AdminBarActionResolver ? azione BO
-                         (non ancora collegati)
-```
+Il nome della rotta finale Symfony non arriva mai dal FO. Oggi esiste solo l'azione esplicita `product_edit`; ogni nuova azione dovra avere una mappatura server-side, parametri strettamente validati e il proprio permesso BO. Non estendere ancora a categoria, CMS o moduli.
 
-Da qui in avanti lavorare soltanto per incrementi completi e verificabili. Il prossimo incremento � esclusivamente **Modifica prodotto**: collegare factory e resolver al `FrontController`, applicare il permesso, creare il redirector BO e verificare il pulsante. Non estendere prima a categoria, CMS o moduli.
-Aggiungere progressivamente:
+In multistore verificare anche l'accesso dell'employee al negozio del prodotto. Il redirector non modifica dati e la pagina BO di destinazione resta responsabile dei controlli Core sulla risorsa.
 
-1. modifica prodotto;
-2. modifica categoria;
-3. modifica pagina CMS.
+**Predisposto per le prossime azioni:** `AdminPathProvider`, i provider risorsa categoria/CMS e l'interfaccia `AdminBarActionProviderInterface`. La visualizzazione resta temporaneamente in `FrontController::smartyOutputContent()` con stile inline: dovra essere spostata in un template Smarty.
 
-Per ogni azione:
+Verifica manuale dell'incremento prodotto:
 
-* identificare la risorsa FO corrente;
-* verificare il permesso dell'employee;
-* mostrare l'azione solo se autorizzato;
-* generare il link corretto verso il BO.
+* feature flag attiva, employee con permesso Update prodotti, pagina prodotto FO: appare `Modifica prodotto`;
+* clic: apertura della pagina BO di modifica dello stesso prodotto;
+* employee senza quel permesso: il pulsante non appare; anche richiamando manualmente l'endpoint BO, `AdminSecurity` nega l'accesso;
+* feature flag disattiva: barra e endpoint non sono disponibili.
 
-Centralizzare la costruzione dei link BO ed evitare path hardcodati sparsi nel Front Office.
+### Step 5 - Estendibilita
 
-Verificare anche l'accesso dell'employee al negozio della risorsa nel contesto multistore. Il BO deve comunque applicare i propri controlli di autenticazione e autorizzazione all'apertura del link.
-
-### Step 5 — Estendibilità
-
-Solo dopo che il comportamento Core è funzionante, valutare un'architettura basata su provider, ad esempio:
-
-`AdminBarActionProviderInterface`
-
-con implementazioni dedicate a prodotto, categoria e CMS.
-
-L'architettura dovrà essere predisposta per consentire in futuro ai moduli di registrare proprie azioni, senza necessariamente implementare questa possibilità nella prima versione.
+L'architettura a provider e gia predisposta: `AdminBarActionProviderInterface` consente provider distinti per prodotto, categoria e CMS. Prima di aggiungere una nuova azione verificare il flusso completo prodotto. In seguito i moduli potranno registrare provider propri, mantenendo endpoint BO espliciti e autorizzazioni server-side.
 
 ### Metodo di lavoro
 
