@@ -23,6 +23,13 @@ services:
       $resourceProviders: !tagged_iterator prestashop.admin_bar.resource_provider
     public: true
 
+  PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPermissionChecker:
+    arguments:
+      - '@doctrine.dbal.default_connection'
+      - '%database_prefix%'
+
+  PrestaShop\PrestaShop\Adapter\AdminBar\ProductAdminBarActionProvider:
+    tags: ['prestashop.admin_bar.action_provider']
   PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarActionResolver:
     arguments:
       $providers: !tagged_iterator prestashop.admin_bar.action_provider
