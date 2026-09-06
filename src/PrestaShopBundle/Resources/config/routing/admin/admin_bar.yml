@@ -15,3 +15,21 @@ _admin_bar_category_edit:
     _legacy_controller: AdminCategories
   requirements:
     categoryId: \d+
+
+_admin_bar_cms_edit:
+  path: /cms/{cmsId}
+  methods: [ GET ]
+  defaults:
+    _controller: PrestaShopBundle\Controller\Admin\AdminBarController::editCmsAction
+    _legacy_controller: AdminCmsContent
+  requirements:
+    cmsId: \d+
+
+_admin_bar_cms_category_edit:
+  path: /cms-category/{cmsCategoryId}
+  methods: [ GET ]
+  defaults:
+    _controller: PrestaShopBundle\Controller\Admin\AdminBarController::editCmsCategoryAction
+    _legacy_controller: AdminCmsContent
+  requirements:
+    cmsCategoryId: \d+

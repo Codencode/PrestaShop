@@ -199,30 +199,34 @@ Il controller BO non deve mai accettare una route Symfony arbitraria dal paramet
 
 #### Stato reale dell'implementazione
 
-**Gia usato:** `FrontController::smartyOutputContent()` mostra la barra solo con feature flag attiva e `AdminEmployeeContextProvider` valido. Nelle pagine prodotto e categoria chiama anche `AdminBarPageContextFactory`, `AdminBarActionResolver` e i rispettivi action provider.
+**Gia usato:** `FrontController::smartyOutputContent()` mostra la barra solo con feature flag attiva e `AdminEmployeeContextProvider` valido. Nelle pagine prodotto, categoria, pagina CMS e categoria CMS chiama anche `AdminBarPageContextFactory`, `AdminBarActionResolver` e i rispettivi action provider.
 
-Il provider prodotto legge la risorsa con `ProductControllerCore::getProduct()` e restituisce `product_edit` solo al profilo che possiede il ruolo BO di aggiornamento prodotti. Il provider categoria restituisce `category_edit` solo con il ruolo BO di aggiornamento categorie. Questi controlli FO servono solo a decidere la visibilita dei pulsanti: le stesse autorizzazioni vengono controllate di nuovo nel BO.
+Il provider prodotto legge la risorsa con `ProductControllerCore::getProduct()` e restituisce `product_edit` solo al profilo che possiede il ruolo BO di aggiornamento prodotti. Il provider categoria restituisce `category_edit` solo con il ruolo BO di aggiornamento categorie. Il provider CMS restituisce `cms_edit` e `cms_category_edit` con il ruolo BO `AdminCmsContent` Update; la categoria CMS radice non e modificabile e non mostra il pulsante. Questi controlli FO servono solo a decidere la visibilita dei pulsanti: le stesse autorizzazioni vengono controllate di nuovo nel BO.
 
 Il renderer temporaneo usa `AdminBarActionUrlProvider`, che contiene la whitelist tra nome azione, parametro e endpoint BO. Il `FrontController` non conosce piu le azioni concrete.
 
-I pulsanti puntano esclusivamente a `admin_path/_admin-bar/product/{id}` e `admin_path/_admin-bar/category/{id}`. Le route BO `_admin_bar_product_edit` e `_admin_bar_category_edit` iniziano con `_`, quindi non richiedono il token URL al primo accesso; non sono pubbliche: `AdminSecurity` richiede rispettivamente `update` su `AdminProducts` e `AdminCategories`. Se la feature flag e disattiva, il controller restituisce 404. Dopo il controllo il controller reindirizza alle route ufficiali `admin_product_form` e `admin_categories_edit`; il router BO aggiunge il token URL della destinazione.
+I pulsanti puntano esclusivamente agli endpoint `admin_path/_admin-bar/{risorsa}/{id}` per prodotto, categoria, pagina CMS e categoria CMS. Le route BO iniziano con `_`, quindi non richiedono il token URL al primo accesso; non sono pubbliche: `AdminSecurity` richiede il rispettivo permesso Update. Se la feature flag e disattiva, il controller restituisce 404. Dopo il controllo il controller reindirizza alle route ufficiali `admin_product_form`, `admin_categories_edit`, `admin_cms_pages_edit` e `admin_cms_pages_category_edit`; il router BO aggiunge il token URL della destinazione.
 
-Il nome della rotta finale Symfony non arriva mai dal FO. Oggi esistono soltanto le azioni esplicite `product_edit` e `category_edit`; ogni nuova azione dovra avere una mappatura server-side, parametri strettamente validati e il proprio permesso BO. Non estendere ancora a CMS o moduli.
+Il nome della rotta finale Symfony non arriva mai dal FO. Oggi esistono soltanto le azioni esplicite `product_edit`, `category_edit`, `cms_edit` e `cms_category_edit`; ogni nuova azione dovra avere una mappatura server-side, parametri strettamente validati e il proprio permesso BO. Non estendere ancora ai moduli.
 
 In multistore verificare anche l'accesso dell'employee al negozio della risorsa. Il redirector non modifica dati e la pagina BO di destinazione resta responsabile dei controlli Core sulla risorsa.
 
-**Predisposto per le prossime azioni:** `AdminPathProvider`, il provider risorsa CMS e l'interfaccia `AdminBarActionProviderInterface`. La visualizzazione resta temporaneamente in `FrontController::smartyOutputContent()` con stile inline: dovra essere spostata in un template Smarty.
+**Predisposto per le prossime azioni:** `AdminPathProvider` e l'interfaccia `AdminBarActionProviderInterface`. La visualizzazione resta temporaneamente in `FrontController::smartyOutputContent()` con stile inline: dovra essere spostata in un template Smarty.
 
-Verifica manuale degli incrementi prodotto e categoria:
+Verifica manuale degli incrementi Core:
 
 * feature flag attiva, employee con permesso Update prodotti, pagina prodotto FO: appare `Modifica prodotto` e apre lo stesso prodotto nel BO;
 * feature flag attiva, employee con permesso Update categorie, pagina categoria FO: appare `Modifica categoria` e apre la stessa categoria nel BO;
+* feature flag attiva, employee con permesso Update pagine CMS, pagina CMS FO: appare Modifica pagina CMS e apre la stessa pagina nel BO;
+* feature flag attiva, employee con permesso Update pagine CMS, categoria CMS FO diversa dalla radice: appare Modifica categoria CMS e apre la stessa categoria nel BO;
 * employee senza il rispettivo permesso: il pulsante non appare; anche richiamando manualmente l'endpoint BO, `AdminSecurity` nega l'accesso;
 * feature flag disattiva: barra e endpoint non sono disponibili.
 
 ### Step 5 - Estendibilita
 
-L'architettura a provider e gia predisposta: `AdminBarActionProviderInterface` consente provider distinti per prodotto, categoria e CMS. Prima di aggiungere una nuova azione verificare i flussi completi prodotto e categoria. In seguito i moduli potranno registrare provider propri, mantenendo endpoint BO espliciti e autorizzazioni server-side.
+L'architettura a provider e gia predisposta: `AdminBarActionProviderInterface` consente provider distinti per prodotto, categoria e CMS. Prima di aggiungere una nuova azione verificare i flussi completi Core.
+
+Il prossimo passo e rendere estendibile anche `AdminBarActionUrlProvider`, mediante provider URL taggati. Un modulo dovra trasformare soltanto le proprie azioni in endpoint BO espliciti, protetti dal permesso del proprio tab; non potra passare dal FO una route Symfony arbitraria. Solo dopo definire e verificare questo contratto si potra aggiungere un modulo concreto.
 
 ### Metodo di lavoro
 

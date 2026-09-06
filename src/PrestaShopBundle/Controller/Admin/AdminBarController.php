@@ -37,4 +37,28 @@ final class AdminBarController extends PrestaShopAdminController
 
         return $this->redirectToRoute('admin_categories_edit', ['categoryId' => $categoryId]);
     }
+
+    #[AdminSecurity("is_granted('update', 'AdminCmsContent')", redirectRoute: 'admin_cms_pages_index')]
+    public function editCmsAction(int $cmsId): RedirectResponse
+    {
+        // TODO <cnc> ===== Front admin bar ===== AdminBarController::editCmsAction() - DA VERIFICARE
+        // Aggiungere qui solo azioni esplicitamente mappate e protette dal relativo permesso BO.
+        if (!$this->getFeatureFlagStateChecker()->isEnabled(FeatureFlagSettings::FEATURE_FLAG_FRONT_OFFICE_ADMIN_BAR)) {
+            throw $this->createNotFoundException();
+        }
+
+        return $this->redirectToRoute('admin_cms_pages_edit', ['cmsPageId' => $cmsId]);
+    }
+
+    #[AdminSecurity("is_granted('update', 'AdminCmsContent')", redirectRoute: 'admin_cms_pages_index')]
+    public function editCmsCategoryAction(int $cmsCategoryId): RedirectResponse
+    {
+        // TODO <cnc> ===== Front admin bar ===== AdminBarController::editCmsCategoryAction() - DA VERIFICARE
+        // Aggiungere qui solo azioni esplicitamente mappate e protette dal relativo permesso BO.
+        if (!$this->getFeatureFlagStateChecker()->isEnabled(FeatureFlagSettings::FEATURE_FLAG_FRONT_OFFICE_ADMIN_BAR)) {
+            throw $this->createNotFoundException();
+        }
+
+        return $this->redirectToRoute('admin_cms_pages_category_edit', ['cmsCategoryId' => $cmsCategoryId]);
+    }
 }

@@ -24,6 +24,10 @@ final class AdminBarPermissionChecker
     {
         return $this->canUpdate($profileId, 'ADMINCATEGORIES');
     }
+    public function canUpdateCmsContent(int $profileId): bool
+    {
+        return $this->canUpdate($profileId, 'ADMINCMSCONTENT');
+    }
 
     private function canUpdate(int $profileId, string $legacyController): bool
     {
