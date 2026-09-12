@@ -15,6 +15,8 @@ final class AdminBarPageContext
         private readonly string $pageName,
         private readonly ?int $resourceId = null,
         private readonly ?string $resourceType = null,
+        private readonly ?string $ownerModule = null,
+        private readonly ?string $controllerName = null,
     ) {
     }
 
@@ -36,5 +38,15 @@ final class AdminBarPageContext
     public function getResourceType(): ?string
     {
         return $this->resourceType;
+    }
+
+    public function getOwnerModule(): ?string
+    {
+        return $this->ownerModule;
+    }
+
+    public function getControllerName(): string
+    {
+        return $this->controllerName ?? $this->pageName;
     }
 }

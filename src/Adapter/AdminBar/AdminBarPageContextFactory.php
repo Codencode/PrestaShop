@@ -17,23 +17,41 @@ final class AdminBarPageContextFactory
 
     public function create(object $controller): ?AdminBarPageContext
     {
-        // TODO <cnc> ===== Front admin bar ===== AdminBarPageContextFactory::create() - DA VERIFICARE
-        if (!method_exists($controller, 'getControllerName')) {
+        // TODO <cnc> ===== Front admin bar ===== - ESTENSIONE PER MODULI - AdminBarPageContextFactory::create() - DA VERIFICARE
+        // Aggiungere un test con ModuleFrontController per ownerModule e controller normalizzato.
+        if (!method_exists($controller, 'getPageName')) {
             return null;
         }
 
-        $pageName = $controller->getControllerName();
+        $pageName = $controller->getPageName();
         if (!is_string($pageName) || $pageName === '') {
             return null;
+        }
+
+        $ownerModule = null;
+        $controllerName = $pageName;
+        if ($controller instanceof \ModuleFrontController && $controller->module instanceof \Module) {
+            $ownerModule = $controller->module->name;
+            $modulePagePrefix = 'module-' . $ownerModule . '-';
+            if (str_starts_with($pageName, $modulePagePrefix)) {
+                $controllerName = substr($pageName, strlen($modulePagePrefix));
+            }
         }
 
         foreach ($this->resourceProviders as $resourceProvider) {
             $resource = $resourceProvider->getResource($controller);
             if ($resource !== null) {
-                return new AdminBarPageContext($controller, $pageName, $resource->getId(), $resource->getType());
+                return new AdminBarPageContext(
+                    $controller,
+                    $pageName,
+                    $resource->getId(),
+                    $resource->getType(),
+                    $ownerModule,
+                    $controllerName,
+                );
             }
         }
 
-        return new AdminBarPageContext($controller, $pageName);
+        return new AdminBarPageContext($controller, $pageName, null, null, $ownerModule, $controllerName);
     }
 }

@@ -224,9 +224,34 @@ Verifica manuale degli incrementi Core:
 
 ### Step 5 - Estendibilita
 
-L'architettura a provider e gia predisposta: `AdminBarActionProviderInterface` consente provider distinti per prodotto, categoria e CMS. Prima di aggiungere una nuova azione verificare i flussi completi Core.
+L'architettura a provider resta riservata alle azioni Core. Per i moduli e stato introdotto l'hook legacy `actionAdminBarGetActions`, registrato anche in `install-dev/data/xml/hook.xml`. La scelta dell'hook evita di dipendere da servizi Symfony dei moduli nel container FO legacy, che non li carica.
 
-Il prossimo passo e rendere estendibile anche `AdminBarActionUrlProvider`, mediante provider URL taggati. Un modulo dovra trasformare soltanto le proprie azioni in endpoint BO espliciti, protetti dal permesso del proprio tab; non potra passare dal FO una route Symfony arbitraria. Solo dopo definire e verificare questo contratto si potra aggiungere un modulo concreto.
+`AdminBarActionResolver` esegue l'hook globalmente tramite `PrestaShop\PrestaShop\Adapter\HookManager`, non tramite `Hook::exec()` diretto. I moduli restituiscono una lista di `AdminBarAction` con endpoint BO locale esplicito; `AdminBarActionUrlProvider` accetta soltanto endpoint nel formato `/_admin-bar/...`, quindi non puo ricevere URL esterni, path traversal o query string arbitrarie.
+
+Il contesto dell'hook contiene:
+
+* `pageContext`: il contesto completo usato anche dai provider Core;
+* `employeeContext`: employee BO validato;
+* `ownerModule`: nome del modulo proprietario del `ModuleFrontController`, oppure `null` per le pagine Core;
+* `controller`: nome normalizzato del controller corrente. Per un modulo e ottenuto dal page name `module-{modulo}-{controller}`.
+
+L'hook resta globale: ogni modulo agganciato puo aggiungere una voce anche alle pagine di un altro modulo o alle pagine Core. Il modulo proprietario non deve usare `instanceof` sulle proprie classi PHP: confronta invece `ownerModule` e `controller`.
+
+#### Modulo di prova `ps_test_adminbar`
+
+Il modulo minimale in `modules/ps_test_adminbar` e usato per verificare la PR:
+
+* ha due `ModuleFrontController`, `first` e `second`, che usano il layout FO PrestaShop e mostrano quindi la barra;
+* ha un controller admin legacy e uno Symfony. Quello Symfony estende `PrestaShopAdminController`, e registrato come servizio con `autowire`, `autoconfigure` e tag `controller.service_arguments`, e renderizza il layout BO standard;
+* crea due Tab nascoste durante l'installazione, necessarie alla risoluzione del controller legacy e ai permessi BO;
+* nel proprio hook usa `ownerModule === 'ps_test_adminbar'` e `controller`: `first` restituisce l'azione verso il controller admin legacy, `second` quella verso il controller Symfony;
+* le route dei due endpoint iniziano con `_` e impostano `_disable_module_prefix: true`: non ricevono il prefisso automatico `/modules` e seguono il modello delle route Core dell'Admin Bar, escluse dal controllo del token URL al primo accesso. Restano protette da autenticazione e `AdminSecurity`.
+
+Per il controller legacy l'endpoint BO Symfony reindirizza all'URL legacy tokenizzato generato nel contesto BO. Il controller Symfony viene aperto direttamente. Dopo modifiche a route, servizi o installazione del modulo svuotare la cache BO/Symfony; per creare le Tab in un modulo gia installato, eseguire reset/reinstallazione.
+
+Verifiche eseguite: lint PHP dei file interessati, validazione YAML e `git diff --check`; il test unitario `AdminBarActionResolverTest` passa (1 test, 3 asserzioni) e verifica che `ownerModule` e `controller` siano inoltrati all'hook.
+
+Resta da aggiungere una verifica automatica specifica per `AdminBarPageContextFactory`, che controlli l'estrazione di `ownerModule` e `controller` da un `ModuleFrontController`, e una verifica manuale con un secondo modulo che aggiunga un'azione a una pagina di `ps_test_adminbar`.
 
 ### Metodo di lavoro
 
