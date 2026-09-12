@@ -788,8 +788,8 @@ class FrontControllerCore extends Controller
             $adminEmployeeContext = $adminEmployeeContextProvider->getContext();
             if ($adminEmployeeContext !== null) {
                 // TODO <cnc-notice> ===== Front admin bar ===== FrontController::smartyOutputContent() ///////////////////////// SONO ARRIVATO QUI
-                // Arrivati: azioni protette per prodotto, categoria, pagina CMS e categoria CMS, con URL provider e redirector BO.
-                // Proseguire: rendere estendibile il provider URL per i moduli, poi spostare il rendering nel template Smarty.
+                // Il sistema è ultimato, da capire se va bene il modulo in cui viene estesa la funzionalità per i moduli
+                // ho inserito un TODO con questa stringa "- ESTENSIONE PER MODULI -"
                 // TODO <cnc> ===== Front admin bar ===== FrontController::smartyOutputContent() - DA VERIFICARE
                 $pageContextFactory = $this->get(PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPageContextFactory::class);
                 $pageContext = $pageContextFactory->create($this);

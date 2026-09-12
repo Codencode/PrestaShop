@@ -21,8 +21,9 @@ final class AdminBarActionResolver
     /** @return list<AdminBarAction> */
     public function getActions(AdminBarPageContext $pageContext, AdminEmployeeContext $employeeContext): array
     {
-        // TODO <cnc> ===== Front admin bar ===== AdminBarActionResolver::getActions() - DA VERIFICARE
-        // Aggiungere solo provider le cui azioni abbiano un endpoint BO esplicitamente mappato.
+        // TODO <cnc> ===== Front admin bar ===== - ESTENSIONE PER MODULI - AdminBarActionResolver::getActions() - contratto moduli da verificare
+        // actionAdminBarGetActions è globale: i moduli usano ownerModule e controller per decidere se contribuire.
+        // Accettare solo AdminBarAction con endpoint BO locale esplicito, validato da AdminBarActionUrlProvider.
         $actions = [];
         foreach ($this->providers as $provider) {
             foreach ($provider->getActions($pageContext, $employeeContext) as $action) {
@@ -35,6 +36,8 @@ final class AdminBarActionResolver
             [
                 'pageContext' => $pageContext,
                 'employeeContext' => $employeeContext,
+                'ownerModule' => $pageContext->getOwnerModule(),
+                'controller' => $pageContext->getControllerName(),
             ],
             null,
             true,

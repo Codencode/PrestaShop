@@ -21,7 +21,9 @@ final class AdminBarActionResolverTest extends TestCase
             ->method('exec')
             ->with(
                 'actionAdminBarGetActions',
-                self::callback(static fn (array $parameters): bool => isset($parameters['pageContext'], $parameters['employeeContext'])),
+                self::callback(static fn (array $parameters): bool => isset($parameters['pageContext'], $parameters['employeeContext'])
+                    && $parameters['ownerModule'] === 'testmodule'
+                    && $parameters['controller'] === 'test-controller'),
                 null,
                 true,
             )
@@ -35,7 +37,7 @@ final class AdminBarActionResolverTest extends TestCase
 
         $resolver = new AdminBarActionResolver([], $hookManager);
         $actions = $resolver->getActions(
-            new AdminBarPageContext(new \stdClass(), 'module-page'),
+            new AdminBarPageContext(new \stdClass(), 'module-page', null, null, 'testmodule', 'test-controller'),
             new AdminEmployeeContext(12, 3),
         );
 
