@@ -6,7 +6,13 @@ namespace PrestaShop\PrestaShop\Adapter\AdminBar;
 final class AdminBarAction
 {
     /** @param array<string, int> $parameters */
-    public function __construct(private readonly string $name, private readonly string $label, private readonly array $parameters = []) {}
+    public function __construct(
+        private readonly string $name,
+        private readonly string $label,
+        private readonly array $parameters = [],
+        private readonly ?string $endpoint = null,
+    ) {
+    }
 
     public function getName(): string
     {
@@ -22,5 +28,10 @@ final class AdminBarAction
     public function getParameters(): array
     {
         return $this->parameters;
+    }
+
+    public function getEndpoint(): ?string
+    {
+        return $this->endpoint;
     }
 }

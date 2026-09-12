@@ -50,6 +50,7 @@ services:
   PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarActionResolver:
     arguments:
       $providers: !tagged_iterator prestashop.admin_bar.action_provider
+      $hookManager: '@PrestaShop\PrestaShop\Adapter\HookManager'
     public: true
 
   PrestaShop\PrestaShop\Core\Security\AdminSessionReaderInterface:

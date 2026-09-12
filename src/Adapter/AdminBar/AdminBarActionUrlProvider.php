@@ -22,16 +22,22 @@ final class AdminBarActionUrlProvider
 
     public function getUrl(AdminBarAction $action): ?string
     {
-        // TODO <cnc> ===== Front admin bar ===== AdminBarActionUrlProvider::getUrl() - DA VERIFICARE
-        // Aggiungere qui solo endpoint BO esplicitamente mappati e protetti.
-        $actionEndpoint = self::ACTION_ENDPOINTS[$action->getName()] ?? null;
-        if ($actionEndpoint === null) {
-            return null;
+        $endpoint = $action->getEndpoint();
+        if ($endpoint === null) {
+            $actionEndpoint = self::ACTION_ENDPOINTS[$action->getName()] ?? null;
+            if ($actionEndpoint === null) {
+                return null;
+            }
+
+            $resourceId = $action->getParameters()[$actionEndpoint['parameter']] ?? null;
+            if (!is_int($resourceId) || $resourceId <= 0) {
+                return null;
+            }
+
+            $endpoint = '/_admin-bar/' . $actionEndpoint['endpoint'] . '/' . $resourceId;
         }
 
-        $parameters = $action->getParameters();
-        $resourceId = $parameters[$actionEndpoint['parameter']] ?? null;
-        if (!is_int($resourceId) || $resourceId <= 0) {
+        if (preg_match('#\A/_admin-bar(?:/[A-Za-z0-9][A-Za-z0-9_-]*)+\z#', $endpoint) !== 1) {
             return null;
         }
 
@@ -40,6 +46,6 @@ final class AdminBarActionUrlProvider
             return null;
         }
 
-        return rtrim($adminPath, '/') . '/_admin-bar/' . $actionEndpoint['endpoint'] . '/' . $resourceId;
+        return rtrim($adminPath, '/') . $endpoint;
     }
 }
