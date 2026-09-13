@@ -8,6 +8,11 @@ declare(strict_types=1);
 
 namespace PrestaShop\PrestaShop\Adapter\AdminBar;
 
+/**
+ * Builds Admin Bar page contexts from Front Office controllers.
+ *
+ * It normalizes module ownership and controller names for the module action hook.
+ */
 final class AdminBarPageContextFactory
 {
     /** @param iterable<AdminBarResourceProviderInterface> $resourceProviders */

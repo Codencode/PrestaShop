@@ -8,6 +8,12 @@ declare(strict_types=1);
 
 namespace PrestaShop\PrestaShop\Adapter\AdminBar;
 
+/**
+ * Carries the Front Office page details required to resolve Admin Bar actions.
+ *
+ * Module ownership and controller name are exposed as stable identifiers so extensions do not
+ * need to depend on concrete Front Office controller classes.
+ */
 final class AdminBarPageContext
 {
     public function __construct(

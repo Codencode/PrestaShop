@@ -6,6 +6,12 @@ namespace PrestaShop\PrestaShop\Adapter\AdminBar;
 use PrestaShop\PrestaShop\Adapter\HookManager;
 use PrestaShop\PrestaShop\Core\Security\AdminEmployeeContext;
 
+/**
+ * Collects contextual Admin Bar actions from Core providers and installed modules.
+ *
+ * Modules contribute through actionAdminBarGetActions and receive stable page identifiers in
+ * the hook parameters. Only actions with an explicit Back Office endpoint are retained.
+ */
 final class AdminBarActionResolver
 {
     private const MODULE_ACTIONS_HOOK = 'actionAdminBarGetActions';
@@ -14,8 +20,7 @@ final class AdminBarActionResolver
     public function __construct(
         private readonly iterable $providers,
         private readonly HookManager $hookManager,
-    )
-    {
+    ) {
     }
 
     /** @return list<AdminBarAction> */
