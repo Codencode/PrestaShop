@@ -7,8 +7,6 @@ use PrestaShop\PrestaShop\Core\Security\AdminEmployeeContext;
 
 interface AdminBarActionProviderInterface
 {
-    // TODO <cnc> ===== Front admin bar ===== AdminBarActionProviderInterface::getActions() - DA VERIFICARE
-    // Provider Core registrati nel container; i moduli usano actionAdminBarGetActions.
     /** @return iterable<AdminBarAction> */
     public function getActions(AdminBarPageContext $pageContext, AdminEmployeeContext $employeeContext): iterable;
 }

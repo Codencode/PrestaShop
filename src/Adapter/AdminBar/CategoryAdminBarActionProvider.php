@@ -26,6 +26,7 @@ final class CategoryAdminBarActionProvider implements AdminBarActionProviderInte
         return [
             new AdminBarAction(
                 'category_edit',
+                // TODO <cnc> ===== Front admin bar ===== TRADUZIONE: inserire valore in inglese e usare translator
                 'Modifica categoria',
                 [],
                 '/category/' . $pageContext->getResourceId(),

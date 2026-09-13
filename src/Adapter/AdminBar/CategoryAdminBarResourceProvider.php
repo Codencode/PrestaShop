@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace PrestaShop\PrestaShop\Adapter\AdminBar;
 
-use CategoryControllerCore;
+use CategoryController;
 use Throwable;
 
 final class CategoryAdminBarResourceProvider implements AdminBarResourceProviderInterface
 {
     public function getResource(object $controller): ?AdminBarResource
     {
-        if (!$controller instanceof CategoryControllerCore) {
+        if (!$controller instanceof CategoryController) {
             return null;
         }
 

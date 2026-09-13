@@ -33,6 +33,7 @@ final class CmsAdminBarActionProvider implements AdminBarActionProviderInterface
             'cms' => [
                 new AdminBarAction(
                     'cms_edit',
+                    // TODO <cnc> ===== Front admin bar ===== TRADUZIONE: inserire valore in inglese e usare translator
                     'Modifica pagina CMS',
                     [],
                     '/cms/' . $resourceId,
@@ -41,6 +42,7 @@ final class CmsAdminBarActionProvider implements AdminBarActionProviderInterface
             'cms_category' => [
                 new AdminBarAction(
                     'cms_category_edit',
+                    // TODO <cnc> ===== Front admin bar ===== TRADUZIONE: inserire valore in inglese e usare translator
                     'Modifica categoria CMS',
                     [],
                     '/cms-category/' . $resourceId,

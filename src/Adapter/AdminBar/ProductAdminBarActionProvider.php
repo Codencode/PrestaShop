@@ -19,6 +19,7 @@ final class ProductAdminBarActionProvider implements AdminBarActionProviderInter
         if ($pageContext->getResourceType() !== 'product' || $pageContext->getResourceId() === null) {
             return [];
         }
+
         if (!$this->permissionChecker->canUpdateProducts($employeeContext->getProfileId())) {
             return [];
         }
@@ -26,6 +27,7 @@ final class ProductAdminBarActionProvider implements AdminBarActionProviderInter
         return [
             new AdminBarAction(
                 'product_edit',
+                // TODO <cnc> ===== Front admin bar ===== TRADUZIONE: inserire valore in inglese e usare translator
                 'Modifica prodotto',
                 [],
                 '/product/' . $pageContext->getResourceId(),
