@@ -8,6 +8,14 @@ declare(strict_types=1);
 
 namespace PrestaShop\PrestaShop\Adapter\AdminBar;
 
+use Module;
+use ModuleFrontController;
+
+/**
+ * Builds Admin Bar page contexts from Front Office controllers.
+ *
+ * It normalizes module ownership and controller names for the module action hook.
+ */
 final class AdminBarPageContextFactory
 {
     /** @param iterable<AdminBarResourceProviderInterface> $resourceProviders */
@@ -17,7 +25,6 @@ final class AdminBarPageContextFactory
 
     public function create(object $controller): ?AdminBarPageContext
     {
-        // TODO <cnc> ===== Front admin bar ===== - ESTENSIONE PER MODULI - AdminBarPageContextFactory::create() - DA VERIFICARE
         // Aggiungere un test con ModuleFrontController per ownerModule e controller normalizzato.
         if (!method_exists($controller, 'getPageName')) {
             return null;
@@ -30,7 +37,8 @@ final class AdminBarPageContextFactory
 
         $ownerModule = null;
         $controllerName = $pageName;
-        if ($controller instanceof \ModuleFrontController && $controller->module instanceof \Module) {
+        // TODO <cnc> ===== Front admin bar ===== - ESTENSIONE PER MODULI - AdminBarPageContextFactory::create() - DA VERIFICARE
+        if ($controller instanceof ModuleFrontController && $controller->module instanceof Module) {
             $ownerModule = $controller->module->name;
             $modulePagePrefix = 'module-' . $ownerModule . '-';
             if (str_starts_with($pageName, $modulePagePrefix)) {

@@ -6,14 +6,32 @@ namespace PrestaShop\PrestaShop\Adapter\AdminBar;
 
 use PrestaShop\PrestaShop\Adapter\Security\AdminPathProvider;
 
+/**
+ * Builds local Back Office URLs for Admin Bar actions.
+ *
+ * Explicit endpoints are restricted to the /_admin-bar path to prevent extensions from
+ * generating arbitrary or external URLs from the Front Office.
+ */
 final class AdminBarActionUrlProvider
 {
     /** @var array<string, array{endpoint: string, parameter: string}> */
     private const ACTION_ENDPOINTS = [
-        'product_edit' => ['endpoint' => 'product', 'parameter' => 'product_id'],
-        'category_edit' => ['endpoint' => 'category', 'parameter' => 'category_id'],
-        'cms_edit' => ['endpoint' => 'cms', 'parameter' => 'cms_id'],
-        'cms_category_edit' => ['endpoint' => 'cms-category', 'parameter' => 'cms_category_id'],
+        'product_edit' => [
+            'endpoint' => 'product',
+            'parameter' => 'product_id'
+        ],
+        'category_edit' => [
+            'endpoint' => 'category',
+            'parameter' => 'category_id'
+        ],
+        'cms_edit' => [
+            'endpoint' => 'cms',
+            'parameter' => 'cms_id'
+        ],
+        'cms_category_edit' => [
+            'endpoint' => 'cms-category',
+            'parameter' => 'cms_category_id'
+        ],
     ];
 
     public function __construct(private readonly AdminPathProvider $adminPathProvider)

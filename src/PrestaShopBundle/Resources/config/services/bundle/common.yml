@@ -7,7 +7,7 @@ services:
 
   PrestaShop\PrestaShop\Adapter\Security\AdminPathProvider: ~
 
-  # TODO <cnc> ===== Front admin bar ===== AdminBarActionUrlProvider service definition - DA VERIFICARE
+  # // TODO <cnc> ===== Front admin bar ===== AdminBarActionUrlProvider service definition - DA VERIFICARE
   # Eliminare questa definizione pubblica quando la barra non recuperera piu il servizio dal FrontController.
   PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarActionUrlProvider:
     arguments:
@@ -23,7 +23,7 @@ services:
   PrestaShop\PrestaShop\Adapter\AdminBar\CmsAdminBarResourceProvider:
     tags: ['prestashop.admin_bar.resource_provider']
 
-  # TODO <cnc> ===== Front admin bar ===== AdminBarPageContextFactory service definition - DA VERIFICARE
+  # // TODO <cnc> ===== Front admin bar ===== AdminBarPageContextFactory service definition - DA VERIFICARE
   # Eliminare questa definizione pubblica quando la barra non recuperera piu il servizio dal FrontController.
   PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPageContextFactory:
     arguments:
@@ -39,14 +39,17 @@ services:
     arguments:
       - '@PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPermissionChecker'
     tags: ['prestashop.admin_bar.action_provider']
+
   PrestaShop\PrestaShop\Adapter\AdminBar\CategoryAdminBarActionProvider:
     arguments:
       - '@PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPermissionChecker'
     tags: ['prestashop.admin_bar.action_provider']
+
   PrestaShop\PrestaShop\Adapter\AdminBar\CmsAdminBarActionProvider:
     arguments:
       - '@PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPermissionChecker'
     tags: ['prestashop.admin_bar.action_provider']
+
   PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarActionResolver:
     arguments:
       $providers: !tagged_iterator prestashop.admin_bar.action_provider

@@ -3,6 +3,12 @@ declare(strict_types=1);
 
 namespace PrestaShop\PrestaShop\Adapter\AdminBar;
 
+/**
+ * Describes a contextual action displayed in the Front Office Admin Bar.
+ *
+ * Core actions are resolved from their name and resource parameters, while module actions
+ * must provide an explicit local Back Office endpoint.
+ */
 final class AdminBarAction
 {
     /** @param array<string, int> $parameters */
