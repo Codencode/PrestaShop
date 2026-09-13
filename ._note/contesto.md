@@ -203,11 +203,11 @@ Il controller BO non deve mai accettare una route Symfony arbitraria dal paramet
 
 Il provider prodotto legge la risorsa con `ProductControllerCore::getProduct()` e restituisce `product_edit` solo al profilo che possiede il ruolo BO di aggiornamento prodotti. Il provider categoria restituisce `category_edit` solo con il ruolo BO di aggiornamento categorie. Il provider CMS restituisce `cms_edit` e `cms_category_edit` con il ruolo BO `AdminCmsContent` Update; la categoria CMS radice non e modificabile e non mostra il pulsante. Questi controlli FO servono solo a decidere la visibilita dei pulsanti: le stesse autorizzazioni vengono controllate di nuovo nel BO.
 
-Il renderer temporaneo usa `AdminBarActionUrlProvider`, che contiene la whitelist tra nome azione, parametro e endpoint BO. Il `FrontController` non conosce piu le azioni concrete.
+Ogni Action Provider Core dichiara direttamente l'endpoint BO locale della propria azione. `AdminBarActionUrlProvider` non conosce piu i nomi delle azioni: valida soltanto il formato locale `/_admin-bar/...` e aggiunge `admin_path`. Il `FrontController` non conosce le azioni concrete.
 
 I pulsanti puntano esclusivamente agli endpoint `admin_path/_admin-bar/{risorsa}/{id}` per prodotto, categoria, pagina CMS e categoria CMS. Le route BO iniziano con `_`, quindi non richiedono il token URL al primo accesso; non sono pubbliche: `AdminSecurity` richiede il rispettivo permesso Update. Se la feature flag e disattiva, il controller restituisce 404. Dopo il controllo il controller reindirizza alle route ufficiali `admin_product_form`, `admin_categories_edit`, `admin_cms_pages_edit` e `admin_cms_pages_category_edit`; il router BO aggiunge il token URL della destinazione.
 
-Il nome della rotta finale Symfony non arriva mai dal FO. Oggi esistono soltanto le azioni esplicite `product_edit`, `category_edit`, `cms_edit` e `cms_category_edit`; ogni nuova azione dovra avere una mappatura server-side, parametri strettamente validati e il proprio permesso BO. Non estendere ancora ai moduli.
+Il nome della rotta finale Symfony non arriva mai dal FO. Oggi esistono soltanto le azioni esplicite `product_edit`, `category_edit`, `cms_edit` e `cms_category_edit`; ogni nuova azione deve dichiarare il proprio endpoint BO locale nel provider, avere una route/controller BO con parametri strettamente validati e il proprio permesso. Non estendere ancora ai moduli.
 
 In multistore verificare anche l'accesso dell'employee al negozio della risorsa. Il redirector non modifica dati e la pagina BO di destinazione resta responsabile dei controlli Core sulla risorsa.
 
@@ -224,7 +224,9 @@ Verifica manuale degli incrementi Core:
 
 ### Step 5 - Estendibilita
 
-L'architettura a provider resta riservata alle azioni Core. Per i moduli e stato introdotto l'hook legacy `actionAdminBarGetActions`, registrato anche in `install-dev/data/xml/hook.xml`. La scelta dell'hook evita di dipendere da servizi Symfony dei moduli nel container FO legacy, che non li carica.
+I Resource Provider Core sono risolti tramite un `tagged_locator` indicizzato dalla classe runtime del controller (`ProductController`, `CategoryController`, `CmsController`), evitando di scorrere tutti i provider a ogni richiesta. Il container FO legacy carica anche `config/front/services.yml` dei moduli attivi: provider Symfony taggati sono quindi tecnicamente possibili per i moduli moderni.
+
+Per le azioni dei moduli e stato introdotto l'hook legacy `actionAdminBarGetActions`, registrato anche in `install-dev/data/xml/hook.xml`. Nella PR chiedere ai reviewer quale API pubblica preferiscono: hook per massima semplicità e compatibilità legacy, oppure provider taggati nel container FO per i moduli moderni.
 
 `AdminBarActionResolver` esegue l'hook globalmente tramite `PrestaShop\PrestaShop\Adapter\HookManager`, non tramite `Hook::exec()` diretto. I moduli restituiscono una lista di `AdminBarAction` con endpoint BO locale esplicito; `AdminBarActionUrlProvider` accetta soltanto endpoint nel formato `/_admin-bar/...`, quindi non puo ricevere URL esterni, path traversal o query string arbitrarie.
 

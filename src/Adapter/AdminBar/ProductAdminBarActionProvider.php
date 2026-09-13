@@ -15,7 +15,7 @@ final class ProductAdminBarActionProvider implements AdminBarActionProviderInter
     public function getActions(AdminBarPageContext $pageContext, AdminEmployeeContext $employeeContext): iterable
     {
         // TODO <cnc> ===== Front admin bar ===== ProductAdminBarActionProvider::getActions() - DA VERIFICARE
-        // Il renderer FO deve accettare solo azioni con un endpoint BO esplicitamente mappato.
+        // Il renderer FO deve accettare solo azioni con un endpoint BO locale esplicito.
         if ($pageContext->getResourceType() !== 'product' || $pageContext->getResourceId() === null) {
             return [];
         }
@@ -23,6 +23,13 @@ final class ProductAdminBarActionProvider implements AdminBarActionProviderInter
             return [];
         }
 
-        return [new AdminBarAction('product_edit', 'Modifica prodotto', ['product_id' => $pageContext->getResourceId()])];
+        return [
+            new AdminBarAction(
+                'product_edit',
+                'Modifica prodotto',
+                [],
+                '/_admin-bar/product/' . $pageContext->getResourceId(),
+            ),
+        ];
     }
 }

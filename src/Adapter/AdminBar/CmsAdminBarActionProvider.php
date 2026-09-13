@@ -15,7 +15,7 @@ final class CmsAdminBarActionProvider implements AdminBarActionProviderInterface
     public function getActions(AdminBarPageContext $pageContext, AdminEmployeeContext $employeeContext): iterable
     {
         // TODO <cnc> ===== Front admin bar ===== CmsAdminBarActionProvider::getActions() - DA VERIFICARE
-        // Il renderer FO deve accettare solo azioni con un endpoint BO esplicitamente mappato.
+        // Il renderer FO deve accettare solo azioni con un endpoint BO locale esplicito.
         if (!$this->permissionChecker->canUpdateCmsContent($employeeContext->getProfileId())) {
             return [];
         }
@@ -30,8 +30,22 @@ final class CmsAdminBarActionProvider implements AdminBarActionProviderInterface
         }
 
         return match ($pageContext->getResourceType()) {
-            'cms' => [new AdminBarAction('cms_edit', 'Modifica pagina CMS', ['cms_id' => $resourceId])],
-            'cms_category' => [new AdminBarAction('cms_category_edit', 'Modifica categoria CMS', ['cms_category_id' => $resourceId])],
+            'cms' => [
+                new AdminBarAction(
+                    'cms_edit',
+                    'Modifica pagina CMS',
+                    [],
+                    '/_admin-bar/cms/' . $resourceId,
+                ),
+            ],
+            'cms_category' => [
+                new AdminBarAction(
+                    'cms_category_edit',
+                    'Modifica categoria CMS',
+                    [],
+                    '/_admin-bar/cms-category/' . $resourceId,
+                ),
+            ],
             default => [],
         };
     }
