@@ -35,7 +35,7 @@ final class CmsAdminBarActionProvider implements AdminBarActionProviderInterface
                     'cms_edit',
                     'Modifica pagina CMS',
                     [],
-                    '/_admin-bar/cms/' . $resourceId,
+                    '/cms/' . $resourceId,
                 ),
             ],
             'cms_category' => [
@@ -43,7 +43,7 @@ final class CmsAdminBarActionProvider implements AdminBarActionProviderInterface
                     'cms_category_edit',
                     'Modifica categoria CMS',
                     [],
-                    '/_admin-bar/cms-category/' . $resourceId,
+                    '/cms-category/' . $resourceId,
                 ),
             ],
             default => [],

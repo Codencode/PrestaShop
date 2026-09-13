@@ -9,11 +9,14 @@ use PrestaShop\PrestaShop\Adapter\Security\AdminPathProvider;
 /**
  * Builds local Back Office URLs for Admin Bar actions.
  *
- * Explicit endpoints are restricted to the /_admin-bar path to prevent extensions from
- * generating arbitrary or external URLs from the Front Office.
+ * Explicit action endpoints are relative to the Admin Bar path and restricted to local
+ * path segments, to prevent extensions from generating arbitrary or external URLs from
+ * the Front Office.
  */
 final class AdminBarActionUrlProvider
 {
+    private const ADMIN_BAR_PATH_PREFIX = '/_admin-bar';
+
     public function __construct(private readonly AdminPathProvider $adminPathProvider)
     {
     }
@@ -25,7 +28,7 @@ final class AdminBarActionUrlProvider
             return null;
         }
 
-        if (preg_match('#\A/_admin-bar(?:/[A-Za-z0-9][A-Za-z0-9_-]*)+\z#', $endpoint) !== 1) {
+        if (preg_match('#\A(?:/[A-Za-z0-9][A-Za-z0-9_-]*)+\z#', $endpoint) !== 1) {
             return null;
         }
 
@@ -34,6 +37,6 @@ final class AdminBarActionUrlProvider
             return null;
         }
 
-        return rtrim($adminPath, '/') . $endpoint;
+        return rtrim($adminPath, '/') . self::ADMIN_BAR_PATH_PREFIX . $endpoint;
     }
 }

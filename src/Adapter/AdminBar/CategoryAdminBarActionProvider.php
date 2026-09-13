@@ -28,7 +28,7 @@ final class CategoryAdminBarActionProvider implements AdminBarActionProviderInte
                 'category_edit',
                 'Modifica categoria',
                 [],
-                '/_admin-bar/category/' . $pageContext->getResourceId(),
+                '/category/' . $pageContext->getResourceId(),
             ),
         ];
     }

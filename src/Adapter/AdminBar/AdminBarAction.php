@@ -6,8 +6,8 @@ namespace PrestaShop\PrestaShop\Adapter\AdminBar;
 /**
  * Describes a contextual action displayed in the Front Office Admin Bar.
  *
- * Every action provides an explicit local Back Office endpoint, validated before it is
- * rendered in the Front Office.
+ * Every action provides an explicit endpoint relative to the Admin Bar Back Office
+ * prefix, validated before it is rendered in the Front Office.
  */
 final class AdminBarAction
 {

@@ -28,7 +28,7 @@ final class ProductAdminBarActionProvider implements AdminBarActionProviderInter
                 'product_edit',
                 'Modifica prodotto',
                 [],
-                '/_admin-bar/product/' . $pageContext->getResourceId(),
+                '/product/' . $pageContext->getResourceId(),
             ),
         ];
     }

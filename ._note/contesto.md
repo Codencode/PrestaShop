@@ -203,7 +203,7 @@ Il controller BO non deve mai accettare una route Symfony arbitraria dal paramet
 
 Il provider prodotto legge la risorsa con `ProductControllerCore::getProduct()` e restituisce `product_edit` solo al profilo che possiede il ruolo BO di aggiornamento prodotti. Il provider categoria restituisce `category_edit` solo con il ruolo BO di aggiornamento categorie. Il provider CMS restituisce `cms_edit` e `cms_category_edit` con il ruolo BO `AdminCmsContent` Update; la categoria CMS radice non e modificabile e non mostra il pulsante. Questi controlli FO servono solo a decidere la visibilita dei pulsanti: le stesse autorizzazioni vengono controllate di nuovo nel BO.
 
-Ogni Action Provider Core dichiara direttamente l'endpoint BO locale della propria azione. `AdminBarActionUrlProvider` non conosce piu i nomi delle azioni: valida soltanto il formato locale `/_admin-bar/...` e aggiunge `admin_path`. Il `FrontController` non conosce le azioni concrete.
+Ogni Action Provider Core dichiara direttamente il path relativo al prefisso Admin Bar della propria azione, per esempio `/product/{id}`. `AdminBarActionUrlProvider` non conosce piu i nomi delle azioni: mantiene internamente il prefisso `/_admin-bar`, valida soltanto path locali relativi e aggiunge `admin_path`. Il `FrontController` non conosce le azioni concrete e i moduli non devono conoscere il prefisso tecnico globale.
 
 I pulsanti puntano esclusivamente agli endpoint `admin_path/_admin-bar/{risorsa}/{id}` per prodotto, categoria, pagina CMS e categoria CMS. Le route BO iniziano con `_`, quindi non richiedono il token URL al primo accesso; non sono pubbliche: `AdminSecurity` richiede il rispettivo permesso Update. Se la feature flag e disattiva, il controller restituisce 404. Dopo il controllo il controller reindirizza alle route ufficiali `admin_product_form`, `admin_categories_edit`, `admin_cms_pages_edit` e `admin_cms_pages_category_edit`; il router BO aggiunge il token URL della destinazione.
 
@@ -228,7 +228,7 @@ I Resource Provider Core sono risolti tramite un `tagged_locator` indicizzato da
 
 Per le azioni dei moduli e stato introdotto l'hook legacy `actionAdminBarGetActions`, registrato anche in `install-dev/data/xml/hook.xml`. Nella PR chiedere ai reviewer quale API pubblica preferiscono: hook per massima semplicità e compatibilità legacy, oppure provider taggati nel container FO per i moduli moderni.
 
-`AdminBarActionResolver` esegue l'hook globalmente tramite `PrestaShop\PrestaShop\Adapter\HookManager`, non tramite `Hook::exec()` diretto. I moduli restituiscono una lista di `AdminBarAction` con endpoint BO locale esplicito; `AdminBarActionUrlProvider` accetta soltanto endpoint nel formato `/_admin-bar/...`, quindi non puo ricevere URL esterni, path traversal o query string arbitrarie.
+`AdminBarActionResolver` esegue l'hook globalmente tramite `PrestaShop\PrestaShop\Adapter\HookManager`, non tramite `Hook::exec()` diretto. I moduli restituiscono una lista di `AdminBarAction` con un path relativo esplicito, per esempio `/ps-test-adminbar/legacy`; `AdminBarActionUrlProvider` aggiunge il prefisso interno `/_admin-bar` e accetta soltanto segmenti locali, quindi non puo ricevere URL esterni, path traversal o query string arbitrarie.
 
 Il contesto dell'hook contiene:
 
