@@ -790,6 +790,10 @@ class FrontControllerCore extends Controller
                 // TODO <cnc-notice> ===== Front admin bar ===== FrontController::smartyOutputContent() ///////////////////////// SONO ARRIVATO QUI
                 // Il sistema è ultimato, da capire se va bene il modulo in cui viene estesa la funzionalità per i moduli
                 // ho inserito un TODO con questa stringa "- ESTENSIONE PER MODULI -"
+                //
+                // IMPORTANTE: Valutare l'estensione ai moduli tramite servizi in config/front/services.yml e tagged locator/iterator.
+                // Se compatibile con il container FO legacy e con i moduli supportati, eliminare actionAdminBarGetActions.
+                // Verificare prima le dipendenze FO dei servizi modulo e il supporto ai moduli puramente legacy.
                 // TODO <cnc> ===== Front admin bar ===== FrontController::smartyOutputContent() - DA VERIFICARE
                 $pageContextFactory = $this->get(PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPageContextFactory::class);
                 $pageContext = $pageContextFactory->create($this);
