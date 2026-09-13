@@ -10,6 +10,7 @@ namespace PrestaShop\PrestaShop\Adapter\AdminBar;
 
 use Module;
 use ModuleFrontController;
+use Symfony\Contracts\Service\ServiceProviderInterface;
 
 /**
  * Builds Admin Bar page contexts from Front Office controllers.
@@ -18,8 +19,8 @@ use ModuleFrontController;
  */
 final class AdminBarPageContextFactory
 {
-    /** @param iterable<AdminBarResourceProviderInterface> $resourceProviders */
-    public function __construct(private readonly iterable $resourceProviders)
+    /** @param ServiceProviderInterface<AdminBarResourceProviderInterface> $resourceProviders */
+    public function __construct(private readonly ServiceProviderInterface $resourceProviders)
     {
     }
 
@@ -46,7 +47,9 @@ final class AdminBarPageContextFactory
             }
         }
 
-        foreach ($this->resourceProviders as $resourceProvider) {
+        if ($this->resourceProviders->has($controller::class)) {
+            /** @var AdminBarResourceProviderInterface $resourceProvider */
+            $resourceProvider = $this->resourceProviders->get($controller::class);
             $resource = $resourceProvider->getResource($controller);
             if ($resource !== null) {
                 return new AdminBarPageContext(

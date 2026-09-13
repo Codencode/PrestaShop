@@ -15,19 +15,22 @@ services:
     public: true
 
   PrestaShop\PrestaShop\Adapter\AdminBar\ProductAdminBarResourceProvider:
-    tags: ['prestashop.admin_bar.resource_provider']
+    tags:
+      - { name: 'prestashop.admin_bar.resource_provider', controller: ProductController }
 
   PrestaShop\PrestaShop\Adapter\AdminBar\CategoryAdminBarResourceProvider:
-    tags: ['prestashop.admin_bar.resource_provider']
+    tags:
+      - { name: 'prestashop.admin_bar.resource_provider', controller: CategoryController }
 
   PrestaShop\PrestaShop\Adapter\AdminBar\CmsAdminBarResourceProvider:
-    tags: ['prestashop.admin_bar.resource_provider']
+    tags:
+      - { name: 'prestashop.admin_bar.resource_provider', controller: CmsController }
 
   # // TODO <cnc> ===== Front admin bar ===== AdminBarPageContextFactory service definition - DA VERIFICARE
   # Eliminare questa definizione pubblica quando la barra non recuperera piu il servizio dal FrontController.
   PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPageContextFactory:
     arguments:
-      $resourceProviders: !tagged_iterator prestashop.admin_bar.resource_provider
+      $resourceProviders: !tagged_locator { tag: prestashop.admin_bar.resource_provider, index_by: controller }
     public: true
 
   PrestaShop\PrestaShop\Adapter\AdminBar\AdminBarPermissionChecker:
