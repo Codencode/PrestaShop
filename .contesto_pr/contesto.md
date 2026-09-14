@@ -61,3 +61,11 @@ Architettura attesa:
 ```
 
 L'obiettivo non è creare un semplice wrapper di `ProductPresenter`, ma rendere riutilizzabile la reale pipeline di preparazione del prodotto oggi legata a `ProductController`.
+
+### Technical decisions (regression analysis)
+
+* `filterProductContent` is separate from product building. The provider will expose `getProduct()` and `filterProductContent()`; only `initContent` applies the filter.
+* The hook keeps chained `Hook::exec()` semantics.
+* The public provider receives only the product, context, resolved combination and requested quantity.
+* Quantity discounts use a shared dependency that preserves the new pricing engine and caches request results.
+* New services must be imported through `config/services/common.yml` for FO legacy availability.

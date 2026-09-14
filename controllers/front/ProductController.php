@@ -7,13 +7,12 @@ use PrestaShop\PrestaShop\Adapter\Image\ImageRetriever;
 use PrestaShop\PrestaShop\Adapter\Presenter\Manufacturer\ManufacturerPresenter;
 use PrestaShop\PrestaShop\Adapter\Presenter\Product\ProductLazyArray;
 use PrestaShop\PrestaShop\Adapter\Presenter\Product\ProductListingPresenter;
+use PrestaShop\PrestaShop\Adapter\Product\Presentation\ProductQuantityDiscountProvider;
 use PrestaShop\PrestaShop\Adapter\Product\PriceFormatter;
 use PrestaShop\PrestaShop\Adapter\Product\ProductColorsRetriever;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\RedirectType;
 use PrestaShop\PrestaShop\Core\FeatureFlag\FeatureFlagSettings;
 use PrestaShop\PrestaShop\Core\FeatureFlag\FeatureFlagStateCheckerInterface;
-use PrestaShop\PrestaShop\Core\Pricing\Product\Calculator\ProductCalculatorInterface;
-use PrestaShop\PrestaShop\Core\Pricing\Product\ProductPrice;
 use PrestaShop\PrestaShop\Core\Product\ProductExtraContentFinder;
 use PrestaShopBundle\Security\Admin\LegacyAdminTokenValidator;
 
@@ -566,54 +565,14 @@ class ProductControllerCore extends ProductPresentingFrontControllerCore
      */
     protected function assignPriceAndTax(): void
     {
-        $id_customer = (isset($this->context->customer) ? (int) $this->context->customer->id : 0);
-        $id_country = $id_customer ? (int) Customer::getCurrentCountry($id_customer) : (int) Tools::getCountry();
+        $quantityDiscountProvider = $this->getContainer()->get(ProductQuantityDiscountProvider::class);
 
         // Tax
-        $tax = (float) $this->product->getTaxesRate(new Address((int) $this->context->cart->{Configuration::get('PS_TAX_ADDRESS_TYPE')}));
+        $tax = $quantityDiscountProvider->getTaxRate($this->product, $this->context);
         $this->context->smarty->assign('tax_rate', $tax);
 
         $id_product_attribute = $this->getIdProductAttributeByGroupOrRequestOrDefault();
-
-        $quantity_discounts = SpecificPrice::getQuantityDiscounts(
-            (int) $this->product->id,
-            (int) $this->context->shop->id,
-            (int) $this->context->currency->id,
-            $id_country,
-            (int) Group::getCurrent()->id,
-            $id_product_attribute,
-            false,
-            (int) $this->context->customer->id
-        );
-        foreach ($quantity_discounts as &$quantity_discount) {
-            if ($quantity_discount['id_product_attribute']) {
-                $combination = new Combination((int) $quantity_discount['id_product_attribute']);
-                $attributes = $combination->getAttributesName((int) $this->context->language->id);
-                foreach ($attributes as $attribute) {
-                    $quantity_discount['attributes'] = $attribute['name'] . ' - ';
-                }
-                $quantity_discount['attributes'] = rtrim($quantity_discount['attributes'], ' - ');
-            }
-            if ((int) $quantity_discount['id_currency'] == 0 && $quantity_discount['reduction_type'] == 'amount') {
-                $quantity_discount['reduction'] = Tools::convertPriceFull($quantity_discount['reduction'], null, Context::getContext()->currency);
-            }
-        }
-        unset($quantity_discount);
-
-        // New pricing engine (Phase 1): use ProductCalculator directly instead of getPrice
-        if ($this->isNewPricingEnabled()) {
-            $productPrice = ProductPrice::create(
-                (int) $this->product->id,
-                (int) $id_product_attribute,
-            );
-            $this->getProductCalculator()->compute($productPrice);
-            $product_price = (float) (string) $productPrice->getFinalPrice()->getTaxExcluded();
-        } else {
-            $product_price = $this->product->getPrice(Product::$_taxCalculationMethod == PS_TAX_INC, $id_product_attribute, 6, null, false, false);
-        }
-
-        $this->quantity_discounts = $this->formatQuantityDiscounts($quantity_discounts, $product_price, (float) $tax, $this->product->ecotax);
-
+        $this->quantity_discounts = $quantityDiscountProvider->getQuantityDiscounts($this->product, $this->context, $id_product_attribute);
         $this->context->smarty->assign([
             'no_tax' => !Configuration::get('PS_TAX') || !$tax,
             'tax_enabled' => Configuration::get('PS_TAX'),
@@ -1011,39 +970,6 @@ class ProductControllerCore extends ProductPresentingFrontControllerCore
                 $this->context->cart->deleteCustomizationToProduct((int) $this->product->id, $indexes[$field_name]);
             }
         }
-    }
-
-    /**
-     * Calculation of currency-converted discounts for specific prices on product.
-     *
-     * @param array $specific_prices array of specific prices definitions (DEFAULT currency)
-     * @param float $price current price in CURRENT currency
-     * @param float $tax_rate in percents
-     * @param float $ecotax_amount in DEFAULT currency, with tax
-     *
-     * @return array
-     */
-    protected function formatQuantityDiscounts(array $specific_prices, float $price, float $tax_rate, float $ecotax_amount)
-    {
-        $priceCalculationMethod = Group::getPriceDisplayMethod(Group::getCurrent()->id);
-        $isTaxIncluded = false;
-
-        if ($priceCalculationMethod !== null && (int) $priceCalculationMethod === PS_TAX_INC) {
-            $isTaxIncluded = true;
-        }
-
-        foreach ($specific_prices as $key => &$row) {
-            $specificPriceFormatter = new SpecificPriceFormatter(
-                $row,
-                $isTaxIncluded,
-                $this->context->currency,
-                Configuration::get('PS_DISPLAY_DISCOUNT_PRICE')
-            );
-            $row = $specificPriceFormatter->formatSpecificPrice($price, $tax_rate, $ecotax_amount);
-            $row['nextQuantity'] = (isset($specific_prices[$key + 1]) ? (int) $specific_prices[$key + 1]['from_quantity'] : -1);
-        }
-
-        return $specific_prices;
     }
 
     /**
@@ -1867,8 +1793,4 @@ class ProductControllerCore extends ProductPresentingFrontControllerCore
         }
     }
 
-    protected function getProductCalculator(): ProductCalculatorInterface
-    {
-        return $this->container->get('prestashop.pricing.cart.product_calculator');
-    }
 }

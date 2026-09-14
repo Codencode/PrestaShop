@@ -5,6 +5,11 @@ services:
 
   PrestaShop\PrestaShop\Adapter\Configuration: ~
 
+  PrestaShop\PrestaShop\Adapter\Product\Presentation\ProductQuantityDiscountProvider:
+    arguments:
+      $featureFlagStateChecker: '@PrestaShop\PrestaShop\Core\FeatureFlag\FeatureFlagStateCheckerInterface'
+      $productCalculator: '@prestashop.pricing.cart.product_calculator'
+
   PrestaShop\PrestaShop\Adapter\HookManager: ~
 
   prestashop.adapter.legacy.configuration:
