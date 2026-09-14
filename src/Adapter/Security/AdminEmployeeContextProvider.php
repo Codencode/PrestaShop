@@ -25,8 +25,16 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Http\Authenticator\Token\PostAuthenticationToken;
 
+/**
+ * Provides a validated Back Office employee context to the Front Office.
+ *
+ * It reads the shared PHP session without extending its lifetime and returns
+ * only the employee and profile identifiers required by the Admin Bar.
+ */
 final class AdminEmployeeContextProvider
 {
+    private const MAX_SERIALIZED_TOKEN_LENGTH = 1048576;
+
     public function __construct(
         private readonly AdminSessionReaderInterface $sessionReader,
         private readonly ConfigurationInterface $configuration,
@@ -35,31 +43,23 @@ final class AdminEmployeeContextProvider
     ) {
     }
 
+    /**
+     * Returns the Back Office employee context only when the shared PHP session is still valid.
+     *
+     * Reading this context never refreshes the Back Office activity timestamp or session lifetime.
+     */
     public function getContext(): ?AdminEmployeeContext
-    {// TODO <cnc> ===== Front admin bar ===== AdminEmployeeContextProvider::getContext() - DA VERIFICARE
+    {
         $session = $this->sessionReader->read();
+
         // Matches the "main" firewall in app/config/admin/security.yml.
         $serializedToken = $session['_sf2_attributes']['_security_main'] ?? null;
-        if (!is_string($serializedToken) || $serializedToken === '' || strlen($serializedToken) > 1048576) {
+        if (!is_string($serializedToken) || $serializedToken === '' || strlen($serializedToken) > self::MAX_SERIALIZED_TOKEN_LENGTH) {
             return null;
         }
 
         $token = $this->readToken($serializedToken);
-        if ($token === null || !$token->hasAttribute(TokenAttributes::LAST_ADMIN_ACTIVITY)) {
-            return null;
-        }
-
-        $lastActivity = $token->getAttribute(TokenAttributes::LAST_ADMIN_ACTIVITY);
-        if (is_string($lastActivity) && ctype_digit($lastActivity)) {
-            $lastActivity = (int) $lastActivity;
-        }
-        $now = time();
-        $hours = (int) $this->configuration->get('PS_COOKIE_LIFETIME_BO');
-        $cookieLifetime = ($hours > 0 ? min($hours, CookieOptions::MAX_COOKIE_VALUE) : CookieOptions::MAX_COOKIE_VALUE) * 3600;
-        $storageLifetime = (int) ini_get('session.gc_maxlifetime');
-        // Conservative FO expiry: do not rely on probabilistic PHP garbage collection.
-        $lifetime = $storageLifetime > 0 ? min($cookieLifetime, $storageLifetime) : $cookieLifetime;
-        if (!is_int($lastActivity) || $lastActivity <= 0 || $lastActivity > $now || $now - $lastActivity >= $lifetime) {
+        if ($token === null || !$this->isLastAdminActivityValid($token)) {
             return null;
         }
 
@@ -87,14 +87,36 @@ final class AdminEmployeeContextProvider
         return new AdminEmployeeContext($employee->getId(), $employee->getProfile()->getId());
     }
 
+    private function isLastAdminActivityValid(TokenInterface $token): bool
+    {
+        if (!$token->hasAttribute(TokenAttributes::LAST_ADMIN_ACTIVITY)) {
+            return false;
+        }
+
+        $lastActivity = $token->getAttribute(TokenAttributes::LAST_ADMIN_ACTIVITY);
+        if (is_string($lastActivity) && ctype_digit($lastActivity)) {
+            $lastActivity = (int) $lastActivity;
+        }
+
+        $now = time();
+        $backOfficeLifetimeHours = (int) $this->configuration->get('PS_COOKIE_LIFETIME_BO');
+        $backOfficeCookieLifetime = ($backOfficeLifetimeHours > 0 ? min($backOfficeLifetimeHours, CookieOptions::MAX_COOKIE_VALUE) : CookieOptions::MAX_COOKIE_VALUE) * 3600;
+        $storageLifetime = (int) ini_get('session.gc_maxlifetime');
+        // Conservative FO expiry: do not rely on probabilistic PHP garbage collection.
+        $lifetime = $storageLifetime > 0 ? min($backOfficeCookieLifetime, $storageLifetime) : $backOfficeCookieLifetime;
+
+        return is_int($lastActivity)
+            && $lastActivity > 0
+            && $lastActivity <= $now
+            && $now - $lastActivity < $lifetime;
+    }
+
     private function isEmployeeSessionValid(Employee $employee, EmployeeSession $employeeSession): bool
     {
         try {
-            /**
-             * // TODO <cnc> ===== Front admin bar ===== AdminEmployeeContextProvider::isEmployeeSessionValid()
-             * Il container FO non può istanziare EmployeeRepository perché non carica le sue dipendenze BO.
-             * Usare quindi la query DBAL limitata ai dati necessari per validare employee e sessione BO persistita.
-             */
+            // The Front Office container cannot instantiate EmployeeRepository because it does not load its
+            // Back Office dependencies. Validate the employee and persisted Back Office session through a
+            // DBAL query limited to the required data.
             $row = $this->connection->createQueryBuilder()
                 ->select('e.id_employee')
                 ->from($this->databasePrefix . 'employee', 'e')

@@ -15,24 +15,8 @@ final class AdminBarPermissionChecker
     ) {
     }
 
-    public function canUpdateProducts(int $profileId): bool
+    public function canUpdate(int $profileId, string $legacyController): bool
     {
-        return $this->canUpdate($profileId, 'ADMINPRODUCTS');
-    }
-
-    public function canUpdateCategories(int $profileId): bool
-    {
-        return $this->canUpdate($profileId, 'ADMINCATEGORIES');
-    }
-    public function canUpdateCmsContent(int $profileId): bool
-    {
-        return $this->canUpdate($profileId, 'ADMINCMSCONTENT');
-    }
-
-    private function canUpdate(int $profileId, string $legacyController): bool
-    {
-        // TODO <cnc> ===== Front admin bar ===== AdminBarPermissionChecker::canUpdate() - DA VERIFICARE
-        // Estendere solo quando un'azione Core concreta richiede un nuovo permesso.
         if ($profileId === _PS_ADMIN_PROFILE_) {
             return true;
         }

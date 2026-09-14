@@ -267,3 +267,26 @@ Per ogni step:
 6. non anticipare funzionalità appartenenti agli step successivi.
 
 Preferire modifiche incrementali e facilmente separabili in commit distinti.
+
+
+### Refactoring endpoint BO — Step 1 (14 settembre 2026)
+
+* Separati gli endpoint prodotto e categoria: ProductAdminBarController e CategoryAdminBarController in src/PrestaShopBundle/Controller/Admin/AdminBar/; le rispettive route in outing/admin/admin_bar.yml puntano ai nuovi controller. AdminBarController conserva temporaneamente solo CMS e categoria CMS.
+* Verificati php -l sui tre controller e git diff --check; entrambi superati. Il prossimo step separerà gli endpoint CMS.
+
+
+### Refactoring endpoint BO — Step 2 (14 settembre 2026)
+
+* Separati gli endpoint CMS: CmsAdminBarController e CmsCategoryAdminBarController in src/PrestaShopBundle/Controller/Admin/AdminBar/; le quattro route Admin Bar ora puntano tutte a controller specifici. AdminBarController è intenzionalmente vuoto e verrà rimosso nello step finale.
+* Verificati php -l sui controller CMS e sul controller vuoto, git diff --check e l'assenza di route riferite al controller centrale; tutti superati.
+
+
+### Refactoring endpoint BO — Step 3 (14 settembre 2026)
+
+* AdminBarController.php è stato rimosso dall'utente e non è più referenziato. Le quattro route BO risolvono esclusivamente i controller nella cartella Controller/Admin/AdminBar/.* Verificati php bin/console debug:router per tutte e quattro le route, php -l sui quattro controller e git diff --check; tutti superati.
+
+
+### Pulizia provider contesto employee (14 settembre 2026)
+
+* AdminEmployeeContextProvider::getContext() documenta ora in inglese che la lettura FO non rinnova attività o lifetime BO. Il limite del token serializzato è una costante e la validazione di LAST_ADMIN_ACTIVITY è estratta in isLastAdminActivityValid(), senza modificare la politica di scadenza.
+* Rimosso il TODO dal metodo; mantenuto il commento inglese che motiva la query DBAL al posto di EmployeeRepository. Verificati php -l e git diff --check.

@@ -9,6 +9,8 @@ use PrestaShopBundle\Translation\TranslatorInterface;
 
 final class CmsAdminBarActionProvider implements AdminBarActionProviderInterface
 {
+    private const LEGACY_CONTROLLER = 'ADMINCMSCONTENT';
+
     public function __construct(
         private readonly AdminBarPermissionChecker $permissionChecker,
         private readonly TranslatorInterface $translator,
@@ -19,9 +21,10 @@ final class CmsAdminBarActionProvider implements AdminBarActionProviderInterface
         AdminBarPageContext $pageContext,
         AdminEmployeeContext $employeeContext
     ): iterable {
-        // TODO <cnc> ===== Front admin bar ===== CmsAdminBarActionProvider::getActions() - DA VERIFICARE
-        // Il renderer FO deve accettare solo azioni con un endpoint BO locale esplicito.
-        if (!$this->permissionChecker->canUpdateCmsContent($employeeContext->getProfileId())) {
+        if (!$this->permissionChecker->canUpdate(
+            $employeeContext->getProfileId(),
+            self::LEGACY_CONTROLLER,
+        )) {
             return [];
         }
 
@@ -29,7 +32,7 @@ final class CmsAdminBarActionProvider implements AdminBarActionProviderInterface
         if ($resourceId === null) {
             return [];
         }
-        // La categoria CMS radice non ha azione di modifica neppure nel BO Core.
+
         if ($pageContext->getResourceType() === 'cms_category' && $resourceId === 1) {
             return [];
         }

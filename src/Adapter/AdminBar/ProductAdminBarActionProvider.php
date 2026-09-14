@@ -9,6 +9,8 @@ use PrestaShopBundle\Translation\TranslatorInterface;
 
 final class ProductAdminBarActionProvider implements AdminBarActionProviderInterface
 {
+    private const LEGACY_CONTROLLER = 'ADMINPRODUCTS';
+
     public function __construct(
         private readonly AdminBarPermissionChecker $permissionChecker,
         private readonly TranslatorInterface $translator,
@@ -17,13 +19,14 @@ final class ProductAdminBarActionProvider implements AdminBarActionProviderInter
 
     public function getActions(AdminBarPageContext $pageContext, AdminEmployeeContext $employeeContext): iterable
     {
-        // TODO <cnc> ===== Front admin bar ===== ProductAdminBarActionProvider::getActions() - DA VERIFICARE
-        // Il renderer FO deve accettare solo azioni con un endpoint BO locale esplicito.
         if ($pageContext->getResourceType() !== 'product' || $pageContext->getResourceId() === null) {
             return [];
         }
 
-        if (!$this->permissionChecker->canUpdateProducts($employeeContext->getProfileId())) {
+        if (!$this->permissionChecker->canUpdate(
+            $employeeContext->getProfileId(),
+            self::LEGACY_CONTROLLER,
+        )) {
             return [];
         }
 
