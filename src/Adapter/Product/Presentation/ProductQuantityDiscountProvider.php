@@ -44,13 +44,13 @@ final class ProductQuantityDiscountProvider
         $idCustomer = isset($context->customer) ? (int) $context->customer->id : 0;
         $idCountry = $idCustomer ? (int) Customer::getCurrentCountry($idCustomer) : (int) Tools::getCountry();
         $idGroup = (int) Group::getCurrent()->id;
-        $taxRate = $this->getTaxRate($product, $context);
         $cacheKey = $this->getCacheKey($product, $context, $idProductAttribute, $idCountry, $idGroup);
 
         if (isset($this->quantityDiscountsCache[$cacheKey])) {
             return $this->quantityDiscountsCache[$cacheKey];
         }
 
+        $taxRate = $this->getTaxRate($product, $context);
         $specificPrices = SpecificPrice::getQuantityDiscounts(
             (int) $product->id,
             (int) $context->shop->id,

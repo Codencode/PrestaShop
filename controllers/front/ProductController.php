@@ -8,6 +8,7 @@ use PrestaShop\PrestaShop\Adapter\Presenter\Manufacturer\ManufacturerPresenter;
 use PrestaShop\PrestaShop\Adapter\Presenter\Product\ProductLazyArray;
 use PrestaShop\PrestaShop\Adapter\Presenter\Product\ProductListingPresenter;
 use PrestaShop\PrestaShop\Adapter\Product\Presentation\ProductQuantityDiscountProvider;
+use PrestaShop\PrestaShop\Adapter\Product\Presentation\ProductPageProductProvider;
 use PrestaShop\PrestaShop\Adapter\Product\PriceFormatter;
 use PrestaShop\PrestaShop\Adapter\Product\ProductColorsRetriever;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\RedirectType;
@@ -344,20 +345,9 @@ class ProductControllerCore extends ProductPresentingFrontControllerCore
         // At this phase, it's already a presented lazy array, ready to go
         $product_for_template = $this->getTemplateVarProduct();
 
-        // Chained hook call - if multiple modules are hooked here, they will receive the result of the previous one as a parameter
-        $filteredProduct = Hook::exec(
-            'filterProductContent',
-            ['object' => $product_for_template],
-            null,
-            false,
-            true,
-            false,
-            null,
-            true
-        );
-        if (!empty($filteredProduct['object'])) {
-            $product_for_template = $filteredProduct['object'];
-        }
+        $product_for_template = $this->getContainer()
+            ->get(ProductPageProductProvider::class)
+            ->filterProductContent($product_for_template);
 
         // Prepare product presenter for related items like packs and accessories
         $assembler = new ProductAssembler($this->context);
@@ -1144,84 +1134,20 @@ class ProductControllerCore extends ProductPresentingFrontControllerCore
 
     public function getTemplateVarProduct(): ProductLazyArray
     {
-        // If the product array is already built, we return it
         if ($this->templateVarProductCache !== null) {
             return $this->templateVarProductCache;
         }
 
-        // Convert product object into array
-        $product = $this->objectPresenter->present($this->product);
-
-        // Assign several product properties to the array
-        $product['description'] = $this->transformDescriptionWithImg($this->product->description);
-
-        /*
-         * This property is not a product property, but value from stock_available table. It must be here because on this page,
-         * it's not initialized in any other way. On listings, it goes through ProductAssembler and the property is included.
-         * In cart, it's also in the selected fields. But not here.
-         *
-         * We could centralize it right now, but the call StockAvailable::outOfStock($this->id) would still be called
-         * when constructing a Product object, so, let's just migrate it all at once later.
-         */
-        $product['out_of_stock'] = (int) $this->product->out_of_stock;
-        $product['id_product_attribute'] = $this->getIdProductAttributeByGroupOrRequestOrDefault();
-
-        // @todo These three properties should be migrated into the lazy array, so they are available also in listings
-        // Minimal quantity setting of this product or combination
-        $product['minimal_quantity'] = $this->getProductMinimalQuantity($product);
-
-        // Quantity of this product in the current cart
-        $product['cart_quantity'] = $this->context->cart->getProductQuantity((int) $this->product->id, $product['id_product_attribute'])['quantity'];
-
-        // Quantity requested by the customer by the quantity input on product page - may be force-altered by us
-        // @todo - a centralized version of this method is implemented in ProductLazyArray - migrate to it when migrating this code
-        $product['quantity_wanted'] = $this->getWantedQuantity($product);
-
-        // Required quantity to add to cart to reach minimal quantity
-        // @todo - a centralized version of this method is implemented in ProductLazyArray - migrate to it when migrating this code
-        $product['quantity_required'] = $this->getRequiredQuantity($product);
-
-        // Render hook displayProductExtraContent
-        $product['extraContent'] = (new ProductExtraContentFinder())->addParams(['product' => $this->product])->present();
-        $product['ecotax_tax_inc'] = $this->product->getEcotax(null, true, true);
-        $product['ecotax'] = Tools::convertPrice($this->getProductEcotax($product), $this->context->currency, true, $this->context);
-
-        // Enrich the product array
-        $product_full = Product::getProductProperties($this->context->language->id, $product, $this->context);
-
-        // Add possible customizations
-        $product_full = $this->addProductCustomizationData($product_full);
-
-        $product_full['show_quantities'] = (bool) (
-            Configuration::get('PS_DISPLAY_QTIES')
-            && Configuration::get('PS_STOCK_MANAGEMENT')
-            && $product_full['quantity'] > 0
-            && $this->product->available_for_order
-            && !Configuration::isCatalogMode()
-        );
-        $product_full['quantity_label'] = ($product_full['quantity'] > 1) ? $this->trans('Items', [], 'Shop.Theme.Catalog') : $this->trans('Item', [], 'Shop.Theme.Catalog');
-        $product_full['quantity_discounts'] = $this->quantity_discounts;
-
-        $group_reduction = GroupReduction::getValueForProduct($this->product->id, (int) Group::getCurrent()->id);
-        if ($group_reduction === false) {
-            $group_reduction = Group::getReduction((int) $this->context->cookie->id_customer) / 100;
-        }
-        $product_full['customer_group_discount'] = $group_reduction;
-        $product_full['title'] = $this->getProductPageTitle();
-
-        // And finally, present it in the modern way
-        $templateVarProduct = $this->getProductPresenter()->present(
-            $this->getProductPresentationSettings(),
-            $product_full,
-            $this->context->language
+        $provider = $this->getContainer()->get(ProductPageProductProvider::class);
+        $this->templateVarProductCache = $provider->getProduct(
+            $this->product,
+            $this->context,
+            $this->getIdProductAttributeByGroupOrRequestOrDefault(),
+            (int) Tools::getValue('quantity_wanted', 1)
         );
 
-        // Cache the result in order to avoid multiple calls to this method
-        $this->templateVarProductCache = $templateVarProduct;
-
-        return $templateVarProduct;
+        return $this->templateVarProductCache;
     }
-
     /**
      * Gets the minimal quantity allowed for the product or its combination. With no adjustments
      * by the current context.

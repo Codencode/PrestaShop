@@ -5,6 +5,8 @@ services:
 
   PrestaShop\PrestaShop\Adapter\Configuration: ~
 
+  PrestaShop\PrestaShop\Adapter\Product\Presentation\ProductPageProductProvider:
+
   PrestaShop\PrestaShop\Adapter\Product\Presentation\ProductQuantityDiscountProvider:
     arguments:
       $featureFlagStateChecker: '@PrestaShop\PrestaShop\Core\FeatureFlag\FeatureFlagStateCheckerInterface'
