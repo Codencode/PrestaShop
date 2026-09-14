@@ -29,7 +29,7 @@ final class AdminBarActionResolverTest extends TestCase
             )
             ->willReturn([
                 'testmodule' => [
-                    new AdminBarAction('module_edit', 'Edit module', [], '/_admin-bar/testmodule/12'),
+                    new AdminBarAction('module_edit', 'Edit module', [], '/testmodule/12'),
                     'invalid action',
                     new AdminBarAction('missing_endpoint', 'Missing endpoint'),
                 ],

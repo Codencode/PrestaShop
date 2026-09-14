@@ -26,7 +26,6 @@ final class AdminBarPageContextFactory
 
     public function create(object $controller): ?AdminBarPageContext
     {
-        // Aggiungere un test con ModuleFrontController per ownerModule e controller normalizzato.
         if (!method_exists($controller, 'getPageName')) {
             return null;
         }
@@ -38,7 +37,7 @@ final class AdminBarPageContextFactory
 
         $ownerModule = null;
         $controllerName = $pageName;
-        // TODO <cnc> ===== Front admin bar ===== - ESTENSIONE PER MODULI - AdminBarPageContextFactory::create() - DA VERIFICARE
+        // TODO <cnc> ===== Front admin bar ===== - ESTENSIONE PER MODULI - AdminBarPageContextFactory::create() -
         if ($controller instanceof ModuleFrontController && $controller->module instanceof Module) {
             $ownerModule = $controller->module->name;
             $modulePagePrefix = 'module-' . $ownerModule . '-';

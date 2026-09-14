@@ -16,19 +16,21 @@ final class AdminBarActionResolver
 {
     private const MODULE_ACTIONS_HOOK = 'actionAdminBarGetActions';
 
-    /** @param iterable<AdminBarActionProviderInterface> $providers */
+    /**
+     * @param iterable<AdminBarActionProviderInterface> $providers
+     */
     public function __construct(
         private readonly iterable $providers,
         private readonly HookManager $hookManager,
     ) {
     }
 
-    /** @return list<AdminBarAction> */
+    /**
+     * @return list<AdminBarAction>
+     */
     public function getActions(AdminBarPageContext $pageContext, AdminEmployeeContext $employeeContext): array
     {
-        // TODO <cnc> ===== Front admin bar ===== - ESTENSIONE PER MODULI - AdminBarActionResolver::getActions() - contratto moduli da verificare
-        // actionAdminBarGetActions è globale: i moduli usano ownerModule e controller per decidere se contribuire.
-        // Accettare solo AdminBarAction con endpoint BO locale esplicito, validato da AdminBarActionUrlProvider.
+        // TODO <cnc> ===== Front admin bar ===== - ESTENSIONE PER MODULI - AdminBarActionResolver::getActions() -
         $actions = [];
         foreach ($this->providers as $provider) {
             foreach ($provider->getActions($pageContext, $employeeContext) as $action) {
