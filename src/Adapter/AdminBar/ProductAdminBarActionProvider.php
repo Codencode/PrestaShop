@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace PrestaShop\PrestaShop\Adapter\AdminBar;
 
 use PrestaShop\PrestaShop\Core\Security\AdminEmployeeContext;
+use PrestaShopBundle\Translation\TranslatorInterface;
 
 final class ProductAdminBarActionProvider implements AdminBarActionProviderInterface
 {
-    public function __construct(private readonly AdminBarPermissionChecker $permissionChecker)
-    {
+    public function __construct(
+        private readonly AdminBarPermissionChecker $permissionChecker,
+        private readonly TranslatorInterface $translator,
+    ) {
     }
 
     public function getActions(AdminBarPageContext $pageContext, AdminEmployeeContext $employeeContext): iterable
@@ -27,8 +30,7 @@ final class ProductAdminBarActionProvider implements AdminBarActionProviderInter
         return [
             new AdminBarAction(
                 'product_edit',
-                // TODO <cnc> ===== Front admin bar ===== TRADUZIONE: inserire valore in inglese e usare translator
-                'Modifica prodotto',
+                $this->translator->trans('Edit product'),
                 [],
                 '/product/' . $pageContext->getResourceId(),
             ),

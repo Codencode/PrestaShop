@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace PrestaShop\PrestaShop\Adapter\AdminBar;
 
 use PrestaShop\PrestaShop\Core\Security\AdminEmployeeContext;
+use PrestaShopBundle\Translation\TranslatorInterface;
 
 final class CmsAdminBarActionProvider implements AdminBarActionProviderInterface
 {
-    public function __construct(private readonly AdminBarPermissionChecker $permissionChecker)
-    {
+    public function __construct(
+        private readonly AdminBarPermissionChecker $permissionChecker,
+        private readonly TranslatorInterface $translator,
+    ) {
     }
 
-    public function getActions(AdminBarPageContext $pageContext, AdminEmployeeContext $employeeContext): iterable
-    {
+    public function getActions(
+        AdminBarPageContext $pageContext,
+        AdminEmployeeContext $employeeContext
+    ): iterable {
         // TODO <cnc> ===== Front admin bar ===== CmsAdminBarActionProvider::getActions() - DA VERIFICARE
         // Il renderer FO deve accettare solo azioni con un endpoint BO locale esplicito.
         if (!$this->permissionChecker->canUpdateCmsContent($employeeContext->getProfileId())) {
@@ -33,8 +38,7 @@ final class CmsAdminBarActionProvider implements AdminBarActionProviderInterface
             'cms' => [
                 new AdminBarAction(
                     'cms_edit',
-                    // TODO <cnc> ===== Front admin bar ===== TRADUZIONE: inserire valore in inglese e usare translator
-                    'Modifica pagina CMS',
+                    $this->translator->trans('Edit CMS page'),
                     [],
                     '/cms/' . $resourceId,
                 ),
@@ -42,8 +46,7 @@ final class CmsAdminBarActionProvider implements AdminBarActionProviderInterface
             'cms_category' => [
                 new AdminBarAction(
                     'cms_category_edit',
-                    // TODO <cnc> ===== Front admin bar ===== TRADUZIONE: inserire valore in inglese e usare translator
-                    'Modifica categoria CMS',
+                    $this->translator->trans('Edit CMS category'),
                     [],
                     '/cms-category/' . $resourceId,
                 ),
