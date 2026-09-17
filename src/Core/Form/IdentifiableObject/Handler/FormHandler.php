@@ -6,6 +6,9 @@
 
 namespace PrestaShop\PrestaShop\Core\Form\IdentifiableObject\Handler;
 
+use PrestaShop\PrestaShop\Core\BackOffice\Crud\BackOfficeCrudOperationReporterInterface;
+use PrestaShop\PrestaShop\Core\BackOffice\Crud\CrudOperation;
+use PrestaShop\PrestaShop\Core\BackOffice\Crud\CrudOperationType;
 use PrestaShop\PrestaShop\Core\Domain\ApiClient\ValueObject\CreatedApiClient;
 use PrestaShop\PrestaShop\Core\ExtraProperty\Form\ExtraPropertiesFormDataPersister;
 use PrestaShop\PrestaShop\Core\Form\IdentifiableObject\DataHandler\FormDataHandlerInterface;
@@ -46,24 +49,40 @@ final class FormHandler implements FormHandlerInterface
     private $extraPropertiesFormDataPersister;
 
     /**
+     * @var BackOfficeCrudOperationReporterInterface
+     */
+    private $crudOperationReporter;
+
+    /**
+     * @var string|null
+     */
+    private $crudActivityObjectType;
+
+    /**
      * @param FormDataHandlerInterface $dataHandler
      * @param HookDispatcherInterface $hookDispatcher
      * @param TranslatorInterface $translator
      * @param bool $isDemoModeEnabled
      * @param ExtraPropertiesFormDataPersister $extraPropertiesFormDataPersister
+     * @param BackOfficeCrudOperationReporterInterface $crudOperationReporter
+     * @param string|null $crudActivityObjectType
      */
     public function __construct(
         FormDataHandlerInterface $dataHandler,
         HookDispatcherInterface $hookDispatcher,
         TranslatorInterface $translator,
         $isDemoModeEnabled,
-        ExtraPropertiesFormDataPersister $extraPropertiesFormDataPersister
+        ExtraPropertiesFormDataPersister $extraPropertiesFormDataPersister,
+        BackOfficeCrudOperationReporterInterface $crudOperationReporter,
+        ?string $crudActivityObjectType = null
     ) {
         $this->dataHandler = $dataHandler;
         $this->hookDispatcher = $hookDispatcher;
         $this->translator = $translator;
         $this->isDemoModeEnabled = $isDemoModeEnabled;
         $this->extraPropertiesFormDataPersister = $extraPropertiesFormDataPersister;
+        $this->crudOperationReporter = $crudOperationReporter;
+        $this->crudActivityObjectType = $crudActivityObjectType;
     }
 
     /**
@@ -133,6 +152,12 @@ final class FormHandler implements FormHandlerInterface
         $newId = $this->dataHandler->update($id, $data);
 
         $entityId = $this->resolveExtraPropertyEntityId($newId ?? $id);
+
+        $this->reportCrudOperation(
+            CrudOperationType::UPDATE,
+            $entityId
+        );
+
         if (null !== $entityId) {
             $this->extraPropertiesFormDataPersister->persist(
                 $form,
@@ -222,5 +247,23 @@ final class FormHandler implements FormHandlerInterface
         }
 
         return null;
+    }
+
+    private function reportCrudOperation(
+        CrudOperationType $operationType,
+        ?int $objectId
+    ): void {// TODO <cnc> ########## BACK OFFICE CRUD LOGGING ########## - FormHandler::reportCrudOperation() - DA VERIFICARE
+        if (null === $this->crudActivityObjectType || null === $objectId) {
+            return;
+        }
+
+        $this->crudOperationReporter->report(
+            new CrudOperation(
+                $operationType,
+                $this->crudActivityObjectType,
+                $objectId,
+                $objectId
+            )
+        );
     }
 }

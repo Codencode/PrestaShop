@@ -132,3 +132,15 @@ services:
       - '@doctrine.orm.entity_manager'
 
   PrestaShop\PrestaShop\Core\Repository\TransactionManagerInterface: '@PrestaShopBundle\Service\Database\TransactionManager'
+
+  PrestaShopBundle\BackOffice\Crud\BackOfficeCrudOperationScope:
+    autowire: true
+
+  PrestaShopBundle\BackOffice\Crud\SymfonyBackOfficeCrudOperationReporter:
+    autowire: true
+    arguments:
+      $logger: '@logger'
+
+  PrestaShop\PrestaShop\Core\BackOffice\Crud\BackOfficeCrudOperationReporterInterface:
+    alias: PrestaShopBundle\BackOffice\Crud\SymfonyBackOfficeCrudOperationReporter
+    public: false

@@ -17,8 +17,12 @@ interface FormHandlerFactoryInterface
      * Creates new form handler with given data handler.
      *
      * @param FormDataHandlerInterface $dataHandler
+     * @param string|null $crudActivityObjectType Object type used for legacy Back Office CRUD logging
      *
      * @return FormHandlerInterface
      */
-    public function create(FormDataHandlerInterface $dataHandler);
+    public function create(
+        FormDataHandlerInterface $dataHandler,
+        ?string $crudActivityObjectType = null
+    );
 }
