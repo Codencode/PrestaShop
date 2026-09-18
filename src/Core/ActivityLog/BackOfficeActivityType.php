@@ -6,9 +6,9 @@
 
 declare(strict_types=1);
 
-namespace PrestaShop\PrestaShop\Core\BackOffice\Crud;
+namespace PrestaShop\PrestaShop\Core\ActivityLog;
 
-enum CrudOperationType: string
+enum BackOfficeActivityType: string
 {
     case CREATE = 'create';
     case UPDATE = 'update';

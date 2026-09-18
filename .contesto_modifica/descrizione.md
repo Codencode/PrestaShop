@@ -61,9 +61,9 @@ fix/42814-restore-back-office-crud-logging
 
 Nel branch è già presente una prima versione dell'infrastruttura generica:
 
-- `BackOfficeCrudOperationReporterInterface`;
-- `CrudOperation`;
-- `CrudOperationType`;
+- `BackOfficeActivityLoggerInterface`;
+- `BackOfficeActivity`;
+- `BackOfficeActivityType`;
 - una prima implementazione del reporter;
 - una prima integrazione nel generic `IdentifiableObject\FormHandler`;
 - un meccanismo per limitare il reporting al contesto Back Office.
@@ -82,8 +82,8 @@ La parte architetturale relativa al logging è stata invece riallineata alla
 direzione emersa nella #42864:
 
 - `LegacyCrudActivitySubscriber` è stato eliminato;
-- `BackOfficeCrudOperationSucceededEvent` è stato eliminato;
-- `SymfonyBackOfficeCrudOperationReporter` non dispatcha più un evento soltanto
+- `BackOfficeBackOfficeActivitySucceededEvent` è stato eliminato;
+- `BackOfficeActivityLogger` non dispatcha più un evento soltanto
   per raggiungere il logger;
 - il reporter usa direttamente `Psr\Log\LoggerInterface`;
 - la costruzione del messaggio storico e del context (`object_type`,
@@ -93,9 +93,9 @@ direzione emersa nella #42864:
 La pipeline corrente è quindi:
 
 ```text
-CrudOperation
-    -> BackOfficeCrudOperationReporterInterface
-    -> SymfonyBackOfficeCrudOperationReporter
+BackOfficeActivity
+    -> BackOfficeActivityLoggerInterface
+    -> BackOfficeActivityLogger
     -> LoggerInterface
     -> Monolog
     -> legacy log handler esistente
@@ -133,8 +133,8 @@ La pipeline prevista è:
 
 ```text
 operazione BO
-    -> BackOfficeCrudOperationReporterInterface
-    -> BackOfficeCrudOperationReporter
+    -> BackOfficeActivityLoggerInterface
+    -> BackOfficeBackOfficeActivityReporter
     -> LoggerInterface
     -> Monolog
     -> legacy log handler esistente
@@ -154,13 +154,13 @@ Il nuovo codice non deve dipendere direttamente da essi.
 Mantenere in Core un port generico:
 
 ```php
-interface BackOfficeCrudOperationReporterInterface
+interface BackOfficeActivityLoggerInterface
 {
-    public function report(CrudOperation $operation): void;
+    public function report(BackOfficeActivity $operation): void;
 }
 ```
 
-Mantenere un piccolo DTO immutabile `CrudOperation`.
+Mantenere un piccolo DTO immutabile `BackOfficeActivity`.
 
 Il DTO deve contenere almeno:
 
@@ -199,7 +199,7 @@ dell'implementazione legacy.
 Preferire quindi nomi come:
 
 ```text
-crudActivityObjectType
+activityLogObjectType
 ```
 
 invece di:
@@ -208,8 +208,8 @@ invece di:
 legacyObjectType
 ```
 
-// TODO \<cnc> Valutare il naming definitivo di `CrudOperation`, delle relative
-// factory statiche e di `crudActivityObjectType` prima di aprire la PR.
+// TODO \<cnc> Valutare il naming definitivo di `BackOfficeActivity`, delle relative
+// factory statiche e di `activityLogObjectType` prima di aprire la PR.
 
 ---
 
@@ -218,7 +218,7 @@ legacyObjectType
 Fornire un'implementazione Symfony di:
 
 ```php
-BackOfficeCrudOperationReporterInterface
+BackOfficeActivityLoggerInterface
 ```
 
 L'implementazione deve dipendere da:
@@ -241,7 +241,7 @@ occuparsi di inoltrare il messaggio al sistema storico di logging di PrestaShop.
 Il reporter deve essere responsabile di:
 
 1. verificare che l'operazione corrente appartenga al Back Office;
-2. convertire `CrudOperation` nel messaggio storico corretto;
+2. convertire `BackOfficeActivity` nel messaggio storico corretto;
 3. costruire il context di logging corretto;
 4. costruire soltanto i metadati necessari al comportamento storico;
 5. chiamare `LoggerInterface`;
@@ -267,7 +267,7 @@ rompere un'operazione CRUD già completata.
 Concettualmente:
 
 ```php
-public function report(CrudOperation $operation): void
+public function report(BackOfficeActivity $operation): void
 {
     if (!$this->isBackOfficeRequest()) {
         return;
@@ -380,7 +380,7 @@ Il reporter verifica poi questo marker.
 Esempio concettuale:
 
 ```php
-public function report(CrudOperation $operation): void
+public function report(BackOfficeActivity $operation): void
 {
     $request = $this->requestStack->getCurrentRequest();
 
@@ -431,13 +431,13 @@ per il CRUD logging.
 Esempio:
 
 ```text
-crudActivityObjectType: 'Product'
+activityLogObjectType: 'Product'
 ```
 
 Se non viene configurato alcun object type:
 
 ```text
-crudActivityObjectType: null
+activityLogObjectType: null
 ```
 
 non deve essere prodotto alcun report.
@@ -481,10 +481,10 @@ dataHandler->create()
 Esempio concettuale:
 
 ```php
-if (null !== $this->crudActivityObjectType) {
+if (null !== $this->activityLogObjectType) {
     $this->crudOperationReporter->report(
-        CrudOperation::update(
-            $this->crudActivityObjectType,
+        BackOfficeActivity::update(
+            $this->activityLogObjectType,
             (int) $id,
         )
     );
@@ -498,7 +498,7 @@ controller Back Office.
 
 // TODO \<cnc> Completare il wiring della `FormHandlerFactory` con il reporter.
 
-// TODO \<cnc> Configurare Product con `crudActivityObjectType: 'Product'`.
+// TODO \<cnc> Configurare Product con `activityLogObjectType: 'Product'`.
 
 // TODO \<cnc> Verificare la posizione esatta del report nel `FormHandler` affinché
 // avvenga soltanto dopo il completamento di tutte le operazioni considerate parte
@@ -525,7 +525,7 @@ $this->dispatchCommand(
 );
 
 $this->crudOperationReporter->report(
-    CrudOperation::delete('Product', $productId)
+    BackOfficeActivity::delete('Product', $productId)
 );
 ```
 
@@ -565,7 +565,7 @@ Esempio concettuale:
 
 ```php
 $this->crudOperationReporter->report(
-    CrudOperation::duplicate(
+    BackOfficeActivity::duplicate(
         objectType: 'Product',
         sourceId: $productId,
         newId: $newProductId,
@@ -685,17 +685,17 @@ Indicativamente:
 
 ```text
 src/Core/BackOffice/Crud/
-    BackOfficeCrudOperationReporterInterface.php
-    CrudOperation.php
-    CrudOperationType.php
+    BackOfficeActivityLoggerInterface.php
+    BackOfficeActivity.php
+    BackOfficeActivityType.php
 ```
 
 e:
 
 ```text
 src/PrestaShopBundle/BackOffice/Crud/
-    BackOfficeCrudOperationReporter.php
-    BackOfficeCrudOperationScope.php
+    BackOfficeBackOfficeActivityReporter.php
+    BackOfficeActivityScope.php
 ```
 
 Un eventuale subscriber necessario esclusivamente a marcare la Request BO può
@@ -808,7 +808,7 @@ con consumer indipendenti dal logging.
                     generic FormHandler
                                |
                                v
-             BackOfficeCrudOperationReporterInterface
+             BackOfficeActivityLoggerInterface
                                ^
                                |
             DELETE / DUPLICATE / BULK successful item
@@ -816,7 +816,7 @@ con consumer indipendenti dal logging.
                     appropriate success point
 
 
-              BackOfficeCrudOperationReporter
+              BackOfficeBackOfficeActivityReporter
                                |
                     Back Office context check
                                |
@@ -861,7 +861,7 @@ I prossimi passi sono:
 2. rendere definitivamente il reporting best-effort con protezione dagli errori
    del logger, se non già applicato;
 3. sistemare eventuali namespace/collocazioni delle classi ancora incoerenti;
-4. rinominare `legacyObjectType` in `crudActivityObjectType`, se ancora presente;
+4. rinominare `legacyObjectType` in `activityLogObjectType`, se ancora presente;
 5. completare il wiring della `FormHandlerFactory`;
 6. configurare Product come primo consumer;
 7. completare create e update nel generic `FormHandler`;

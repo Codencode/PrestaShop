@@ -6,15 +6,15 @@
 
 declare(strict_types=1);
 
-namespace PrestaShop\PrestaShop\Core\BackOffice\Crud;
+namespace PrestaShop\PrestaShop\Core\ActivityLog;
 
 /**
- * Describes a successful CRUD operation performed from the Back Office.
+ * Describes a successful Back Office activity that must be recorded in the activity log.
  */
-final class CrudOperation
+final class BackOfficeActivity
 {
     public function __construct(
-        private readonly CrudOperationType $operation,
+        private readonly BackOfficeActivityType $type,
         private readonly string $objectType,
         private readonly ?int $objectId,
         private readonly ?int $logObjectId,
@@ -23,9 +23,9 @@ final class CrudOperation
     ) {
     }
 
-    public function getOperation(): CrudOperationType
+    public function getType(): BackOfficeActivityType
     {
-        return $this->operation;
+        return $this->type;
     }
 
     public function getObjectType(): string

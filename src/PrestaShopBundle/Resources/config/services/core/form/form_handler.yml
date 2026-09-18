@@ -9,7 +9,7 @@ services:
       - '@translator'
       - '@=service("prestashop.adapter.legacy.configuration").get("_PS_MODE_DEMO_")'
       - '@PrestaShop\PrestaShop\Core\ExtraProperty\Form\ExtraPropertiesFormDataPersister'
-      - '@PrestaShop\PrestaShop\Core\BackOffice\Crud\BackOfficeCrudOperationReporterInterface'
+      - '@PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityLoggerInterface'
 
   prestashop.core.form.identifiable_object.sql_request_form_handler:
     class: 'PrestaShop\PrestaShop\Core\Form\IdentifiableObject\Handler\FormHandler'

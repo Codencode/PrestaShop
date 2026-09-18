@@ -6,9 +6,9 @@
 
 namespace PrestaShop\PrestaShop\Core\Form\IdentifiableObject\Handler;
 
-use PrestaShop\PrestaShop\Core\BackOffice\Crud\BackOfficeCrudOperationReporterInterface;
-use PrestaShop\PrestaShop\Core\BackOffice\Crud\CrudOperation;
-use PrestaShop\PrestaShop\Core\BackOffice\Crud\CrudOperationType;
+use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivity;
+use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityLoggerInterface;
+use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityType;
 use PrestaShop\PrestaShop\Core\Domain\ApiClient\ValueObject\CreatedApiClient;
 use PrestaShop\PrestaShop\Core\ExtraProperty\Form\ExtraPropertiesFormDataPersister;
 use PrestaShop\PrestaShop\Core\Form\IdentifiableObject\DataHandler\FormDataHandlerInterface;
@@ -49,14 +49,14 @@ final class FormHandler implements FormHandlerInterface
     private $extraPropertiesFormDataPersister;
 
     /**
-     * @var BackOfficeCrudOperationReporterInterface
+     * @var BackOfficeActivityLoggerInterface
      */
-    private $crudOperationReporter;
+    private $backOfficeActivityLogger;
 
     /**
      * @var string|null
      */
-    private $crudActivityObjectType;
+    private $activityLogObjectType;
 
     /**
      * @param FormDataHandlerInterface $dataHandler
@@ -64,8 +64,8 @@ final class FormHandler implements FormHandlerInterface
      * @param TranslatorInterface $translator
      * @param bool $isDemoModeEnabled
      * @param ExtraPropertiesFormDataPersister $extraPropertiesFormDataPersister
-     * @param BackOfficeCrudOperationReporterInterface $crudOperationReporter
-     * @param string|null $crudActivityObjectType
+     * @param BackOfficeActivityLoggerInterface $backOfficeActivityLogger
+     * @param string|null $activityLogObjectType
      */
     public function __construct(
         FormDataHandlerInterface $dataHandler,
@@ -73,16 +73,16 @@ final class FormHandler implements FormHandlerInterface
         TranslatorInterface $translator,
         $isDemoModeEnabled,
         ExtraPropertiesFormDataPersister $extraPropertiesFormDataPersister,
-        BackOfficeCrudOperationReporterInterface $crudOperationReporter,
-        ?string $crudActivityObjectType = null
+        BackOfficeActivityLoggerInterface $backOfficeActivityLogger,
+        ?string $activityLogObjectType = null
     ) {
         $this->dataHandler = $dataHandler;
         $this->hookDispatcher = $hookDispatcher;
         $this->translator = $translator;
         $this->isDemoModeEnabled = $isDemoModeEnabled;
         $this->extraPropertiesFormDataPersister = $extraPropertiesFormDataPersister;
-        $this->crudOperationReporter = $crudOperationReporter;
-        $this->crudActivityObjectType = $crudActivityObjectType;
+        $this->backOfficeActivityLogger = $backOfficeActivityLogger;
+        $this->activityLogObjectType = $activityLogObjectType;
     }
 
     /**
@@ -153,8 +153,8 @@ final class FormHandler implements FormHandlerInterface
 
         $entityId = $this->resolveExtraPropertyEntityId($newId ?? $id);
 
-        $this->reportCrudOperation(
-            CrudOperationType::UPDATE,
+        $this->logBackOfficeActivity(
+            BackOfficeActivityType::UPDATE,
             $entityId
         );
 
@@ -249,18 +249,18 @@ final class FormHandler implements FormHandlerInterface
         return null;
     }
 
-    private function reportCrudOperation(
-        CrudOperationType $operationType,
+    private function logBackOfficeActivity(
+        BackOfficeActivityType $operationType,
         ?int $objectId
-    ): void {// TODO <cnc> ########## BACK OFFICE CRUD LOGGING ########## - FormHandler::reportCrudOperation() - DA VERIFICARE
-        if (null === $this->crudActivityObjectType || null === $objectId) {
+    ): void {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - FormHandler::logBackOfficeActivity() - DA VERIFICARE
+        if (null === $this->activityLogObjectType || null === $objectId) {
             return;
         }
 
-        $this->crudOperationReporter->report(
-            new CrudOperation(
+        $this->backOfficeActivityLogger->log(
+            new BackOfficeActivity(
                 $operationType,
-                $this->crudActivityObjectType,
+                $this->activityLogObjectType,
                 $objectId,
                 $objectId
             )

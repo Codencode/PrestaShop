@@ -6,16 +6,16 @@
 
 declare(strict_types=1);
 
-namespace PrestaShopBundle\BackOffice\Crud;
+namespace PrestaShopBundle\Service\Log;
 
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
- * Determines whether CRUD activity reporting is enabled for the current Back Office request.
+ * Determines whether Back Office activity logging is enabled for the current request.
  */
-final class BackOfficeCrudOperationScope
+final class BackOfficeActivityScope
 {
-    public const REQUEST_ATTRIBUTE = '_back_office_crud_reporting';
+    public const REQUEST_ATTRIBUTE = '_back_office_activity_logging';
 
     public function __construct(
         private readonly RequestStack $requestStack,
@@ -23,7 +23,7 @@ final class BackOfficeCrudOperationScope
     }
 
     public function isEnabled(): bool
-    {// TODO <cnc> ########## BACK OFFICE CRUD LOGGING ########## - BackOfficeCrudOperationScope::isEnabled() - DA VERIFICARE
+    {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - BackOfficeActivityScope::isEnabled() - DA VERIFICARE
         return true === $this->requestStack
             ->getMainRequest()
             ?->attributes

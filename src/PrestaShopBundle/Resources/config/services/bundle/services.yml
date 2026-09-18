@@ -133,14 +133,14 @@ services:
 
   PrestaShop\PrestaShop\Core\Repository\TransactionManagerInterface: '@PrestaShopBundle\Service\Database\TransactionManager'
 
-  PrestaShopBundle\BackOffice\Crud\BackOfficeCrudOperationScope:
+  PrestaShopBundle\Service\Log\BackOfficeActivityScope:
     autowire: true
 
-  PrestaShopBundle\BackOffice\Crud\SymfonyBackOfficeCrudOperationReporter:
+  PrestaShopBundle\Service\Log\BackOfficeActivityLogger:
     autowire: true
     arguments:
       $logger: '@logger'
 
-  PrestaShop\PrestaShop\Core\BackOffice\Crud\BackOfficeCrudOperationReporterInterface:
-    alias: PrestaShopBundle\BackOffice\Crud\SymfonyBackOfficeCrudOperationReporter
+  PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityLoggerInterface:
+    alias: PrestaShopBundle\Service\Log\BackOfficeActivityLogger
     public: false

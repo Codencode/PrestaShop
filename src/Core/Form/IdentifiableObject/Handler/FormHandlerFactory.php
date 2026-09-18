@@ -6,7 +6,7 @@
 
 namespace PrestaShop\PrestaShop\Core\Form\IdentifiableObject\Handler;
 
-use PrestaShop\PrestaShop\Core\BackOffice\Crud\BackOfficeCrudOperationReporterInterface;
+use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityLoggerInterface;
 use PrestaShop\PrestaShop\Core\ExtraProperty\Form\ExtraPropertiesFormDataPersister;
 use PrestaShop\PrestaShop\Core\Form\IdentifiableObject\DataHandler\FormDataHandlerInterface;
 use PrestaShop\PrestaShop\Core\Hook\HookDispatcherInterface;
@@ -38,9 +38,9 @@ final class FormHandlerFactory implements FormHandlerFactoryInterface
     private $extraPropertiesFormDataPersister;
 
     /**
-     * @var BackOfficeCrudOperationReporterInterface
+     * @var BackOfficeActivityLoggerInterface
      */
-    private $crudOperationReporter;
+    private $backOfficeActivityLogger;
 
     /**
      * @param HookDispatcherInterface $hookDispatcher
@@ -53,13 +53,13 @@ final class FormHandlerFactory implements FormHandlerFactoryInterface
         TranslatorInterface $translator,
         $isDemoModeEnabled,
         ExtraPropertiesFormDataPersister $extraPropertiesFormDataPersister,
-        BackOfficeCrudOperationReporterInterface $crudOperationReporter
+        BackOfficeActivityLoggerInterface $backOfficeActivityLogger
     ) {
         $this->hookDispatcher = $hookDispatcher;
         $this->translator = $translator;
         $this->isDemoModeEnabled = $isDemoModeEnabled;
         $this->extraPropertiesFormDataPersister = $extraPropertiesFormDataPersister;
-        $this->crudOperationReporter = $crudOperationReporter;
+        $this->backOfficeActivityLogger = $backOfficeActivityLogger;
     }
 
     /**
@@ -67,7 +67,7 @@ final class FormHandlerFactory implements FormHandlerFactoryInterface
      */
     public function create(
         FormDataHandlerInterface $dataHandler,
-        ?string $crudActivityObjectType = null
+        ?string $activityLogObjectType = null
     ) {
         return new FormHandler(
             $dataHandler,
@@ -75,8 +75,8 @@ final class FormHandlerFactory implements FormHandlerFactoryInterface
             $this->translator,
             $this->isDemoModeEnabled,
             $this->extraPropertiesFormDataPersister,
-            $this->crudOperationReporter,
-            $crudActivityObjectType
+            $this->backOfficeActivityLogger,
+            $activityLogObjectType
         );
     }
 }

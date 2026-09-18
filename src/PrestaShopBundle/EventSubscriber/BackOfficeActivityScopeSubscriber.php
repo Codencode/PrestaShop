@@ -8,16 +8,16 @@ declare(strict_types=1);
 
 namespace PrestaShopBundle\EventSubscriber;
 
-use PrestaShopBundle\BackOffice\Crud\BackOfficeCrudOperationScope;
 use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
+use PrestaShopBundle\Service\Log\BackOfficeActivityScope;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 /**
- * Marks Back Office requests so CRUD activity reporting can be enabled only for BO operations.
+ * Marks Back Office requests so activity logging can be enabled only for BO operations.
  */
-class BackOfficeCrudOperationScopeSubscriber implements EventSubscriberInterface
+class BackOfficeActivityScopeSubscriber implements EventSubscriberInterface
 {
     public static function getSubscribedEvents(): array
     {
@@ -27,7 +27,7 @@ class BackOfficeCrudOperationScopeSubscriber implements EventSubscriberInterface
     }
 
     public function onKernelController(ControllerEvent $event): void
-    {// TODO <cnc> ########## BACK OFFICE CRUD LOGGING ########## - BackOfficeCrudOperationScopeSubscriber::onKernelController() - DA VERIFICARE
+    {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - BackOfficeActivityScopeSubscriber::onKernelController() - DA VERIFICARE
         if (!$event->isMainRequest()) {
             return;
         }
@@ -40,7 +40,7 @@ class BackOfficeCrudOperationScopeSubscriber implements EventSubscriberInterface
         }
 
         $event->getRequest()->attributes->set(
-            BackOfficeCrudOperationScope::REQUEST_ATTRIBUTE,
+            BackOfficeActivityScope::REQUEST_ATTRIBUTE,
             true
         );
     }

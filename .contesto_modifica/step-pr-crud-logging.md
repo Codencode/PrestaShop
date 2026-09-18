@@ -1,6 +1,6 @@
 // TODO <cnc> ########## BACK OFFICE CRUD LOGGING ########## - step-pr-crud-logging.md - DA ELIMINARE ALLA FINE
 
-# Step PR CRUD logging
+# Step PR activity logging
 
 Branch:
 
@@ -16,22 +16,22 @@ Riferimenti:
 ## Completato
 
 - [x] Separato il nuovo codice CRUD dal logging legacy diretto.
-- [x] `SymfonyBackOfficeCrudOperationReporter` usa `Psr\Log\LoggerInterface`.
+- [x] `BackOfficeActivityLogger` usa `Psr\Log\LoggerInterface`.
 - [x] Spostata nel reporter la costruzione del messaggio storico.
 - [x] Spostato nel reporter il context:
   - `object_type`
   - `object_id`
   - `allow_duplicate`
 - [x] Eliminato `LegacyCrudActivitySubscriber`.
-- [x] Eliminato `BackOfficeCrudOperationSucceededEvent`.
+- [x] Eliminato `BackOfficeBackOfficeActivitySucceededEvent`.
 - [x] Eliminato il passaggio:
   `reporter -> event -> subscriber -> LegacyLogger`.
 - [x] Verificato che nel nuovo codice CRUD non restino riferimenti a
   `LegacyLogger`.
 - [x] Verificato che nel codice `src` non restino riferimenti a
-  `BackOfficeCrudOperationSucceededEvent`.
+  `BackOfficeBackOfficeActivitySucceededEvent`.
 - [x] Identificato il motivo dell'errore lazy del
-  `BackOfficeCrudOperationScopeSubscriber`: tutti i subscriber vengono caricati
+  `BackOfficeActivityScopeSubscriber`: tutti i subscriber vengono caricati
   con `lazy: true`.
 - [x] Allineato il nuovo subscriber al comportamento degli altri subscriber
   esistenti, evitando una classe `final` incompatibile con il lazy proxy.
@@ -58,9 +58,9 @@ Riferimenti:
   logging non possa rompere una CRUD già riuscita.
 - [ ] Verificare namespace e collocazione delle classi Core/PrestaShopBundle.
 - [ ] Rinominare eventuali riferimenti `legacyObjectType` in
-  `crudActivityObjectType`.
+  `activityLogObjectType`.
 - [ ] Completare il wiring della `FormHandlerFactory`.
-- [ ] Configurare Product con il proprio `crudActivityObjectType`.
+- [ ] Configurare Product con il proprio `activityLogObjectType`.
 
 ## CRUD Product
 
