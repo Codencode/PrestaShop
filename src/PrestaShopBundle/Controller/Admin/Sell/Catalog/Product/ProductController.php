@@ -16,6 +16,8 @@ use PrestaShop\PrestaShop\Adapter\LegacyContext;
 use PrestaShop\PrestaShop\Adapter\Module\ModuleDataProvider;
 use PrestaShop\PrestaShop\Adapter\Product\Repository\ProductRepository;
 use PrestaShop\PrestaShop\Adapter\Shop\Url\ProductPreviewProvider;
+use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivity;
+use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityType;
 use PrestaShop\PrestaShop\Core\Domain\Product\Command\BulkDeleteProductCommand;
 use PrestaShop\PrestaShop\Core\Domain\Product\Command\BulkDuplicateProductCommand;
 use PrestaShop\PrestaShop\Core\Domain\Product\Command\BulkUpdateProductStatusCommand;
@@ -539,6 +541,12 @@ class ProductController extends PrestaShopAdminController
             }
 
             $this->dispatchCommand(new DeleteProductCommand($productId, $shopConstraint));
+            $this->logBackOfficeActivity(new BackOfficeActivity(
+                BackOfficeActivityType::DELETE,
+                'Product',
+                $productId,
+                $productId
+            ));
             $this->addFlash(
                 'success',
                 $this->trans('Successful deletion', [], 'Admin.Notifications.Success')
@@ -566,6 +574,12 @@ class ProductController extends PrestaShopAdminController
             }
 
             $this->dispatchCommand(new DeleteProductCommand($productId, $shopConstraint));
+            $this->logBackOfficeActivity(new BackOfficeActivity(
+                BackOfficeActivityType::DELETE,
+                'Product',
+                $productId,
+                $productId
+            ));
             $this->addFlash(
                 'success',
                 $this->trans('Successful deletion', [], 'Admin.Notifications.Success')
@@ -593,6 +607,12 @@ class ProductController extends PrestaShopAdminController
             }
 
             $this->dispatchCommand(new DeleteProductCommand($productId, $shopConstraint));
+            $this->logBackOfficeActivity(new BackOfficeActivity(
+                BackOfficeActivityType::DELETE,
+                'Product',
+                $productId,
+                $productId
+            ));
             $this->addFlash(
                 'success',
                 $this->trans('Successful deletion', [], 'Admin.Notifications.Success')

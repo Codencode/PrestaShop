@@ -241,14 +241,7 @@ modificare automaticamente il comportamento di tutti gli altri FormHandler.
 
 ## UPDATE Product
 
-L'UPDATE Product è attualmente funzionante.
-
-È stato verificato manualmente che il salvataggio di un Product dal Back Office
-produce una voce in:
-
-```text
-ps_log
-```
+L'UPDATE Product è attualmente funzionante ed è stato verificato manualmente.
 
 Il logging passa attraverso:
 
@@ -277,15 +270,7 @@ resolveExtraPropertyEntityId()
 
 per determinare l'ID dell'activity log.
 
-La riga già presente in `develop`:
-
-```php
-$entityId = $this->resolveExtraPropertyEntityId($newId ?? $id);
-```
-
-deve restare invariata perché appartiene alla funzionalità ExtraProperty.
-
-Quindi i due concetti devono rimanere separati:
+La logica ExtraProperty rimane separata:
 
 ```text
 $entityId
@@ -295,60 +280,92 @@ $entityId
     -> UPDATE activity log
 ```
 
-Il log deve essere prodotto soltanto nel punto in cui l'operazione di update
-considerata dal FormHandler è terminata correttamente.
-
-// TODO <cnc> Ricontrollare il punto esatto del log UPDATE rispetto a extra
-// properties e hook finali prima della PR.
+Il log viene prodotto nel punto finale del `FormHandler`, dopo Extra Properties
+e hook finale, in modo che un errore precedente impedisca la scrittura
+dell'activity log.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ## CREATE Product
 
-Il prossimo step è:
+CREATE Product è stato implementato in `FormHandler::handleFormCreate()` ed è
+stato verificato manualmente.
 
-```text
-FormHandler::handleFormCreate()
-```
-
-È stato aggiunto un TODO nel metodo per ricordare il punto da implementare.
-
-Create deve:
-
-- recuperare correttamente l'ID dell'oggetto creato;
-- produrre l'activity log soltanto dopo che l'intera operazione di create del
-  FormHandler è terminata correttamente;
-- non riutilizzare helper specifici delle Extra Properties soltanto per ottenere
-  l'ID del log;
-- usare lo stesso `BackOfficeActivityLoggerInterface`;
-- preservare messaggio e metadati storici in `ps_log`.
-
-Prima di implementarlo, verificare la forma reale del valore restituito da:
+L'ID dell'activity log è l'ID restituito da:
 
 ```php
 $this->dataHandler->create($data);
 ```
 
-per non introdurre assunzioni non valide per gli altri FormHandler.
+Non viene usato `resolveExtraPropertyEntityId()` per determinare l'ID del log.
 
-// TODO <cnc> Implementare activity logging in handleFormCreate().
+Come per UPDATE, il log viene prodotto soltanto al termine del flusso riuscito,
+dopo Extra Properties e hook finale.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-## DELETE
+## DELETE Product
 
-Delete deve usare lo stesso logger, ma il log deve essere prodotto nel punto in
-cui la cancellazione è realmente terminata con successo.
+DELETE Product è stato implementato mantenendo il logging fuori dai command
+handler.
 
-Non forzare delete dentro l'astrazione del FormHandler se il flusso applicativo
-non passa da lì.
+È stato aggiunto in `PrestaShopAdminController` un helper protetto e generico
+che inoltra un `BackOfficeActivity` a `BackOfficeActivityLoggerInterface`.
 
-Per Product bisogna individuare il punto corretto dopo il successo del relativo
-command/handler.
+`ProductController` usa questo helper dopo il successo di
+`DeleteProductCommand` nei tre flussi:
 
-Se l'operazione fallisce, nessun activity log deve essere prodotto.
+```text
+all shops
+single shop
+shop group
+```
 
-// TODO <cnc> Individuare il punto di successo effettivo del delete Product.
+Questo mantiene il call site specifico di Product, ma l'infrastruttura
+riutilizzabile da altre entità.
+
+Se `DeleteProductCommand` fallisce, il codice non raggiunge il logging e quindi
+non viene prodotto alcun activity log.
+
+Il comportamento individuato è coerente con lo storico almeno per:
+
+```text
+message: Product deletion
+object_type: Product
+object_id: product ID
+```
+
+Resta da completare la verifica manuale finale del record DELETE in `ps_log` e
+i relativi test.
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+## Adozione futura da parte di altre entità
+
+Per estendere l'activity logging ad altre entità mantenere, quando applicabile,
+questa distinzione:
+
+```text
+CREATE / UPDATE
+    -> generic FormHandler
+
+DELETE e altre operazioni BO fuori dal FormHandler
+    -> helper generico di PrestaShopAdminController
+    -> BackOfficeActivityLoggerInterface
+```
+
+Il call site può essere specifico dell'entità; l'infrastruttura non deve
+esserlo.
+
+Prima di creare nuove astrazioni, verificare se questi punti generici sono già
+sufficienti.
+
+Non introdurre activity logging nei command handler o middleware globale del
+CommandBus soltanto per semplificare l'adozione da parte di nuove entità.
+
+DUPLICATE non è ancora stata implementata. Prima di decidere se usare anche in
+quel caso l'helper di `PrestaShopAdminController`, verificare il flusso reale e
+la semantica storica di source ID, new ID e log object ID.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -451,18 +468,17 @@ indipendenti dal logging.
 
 Ordine consigliato:
 
-1. completare e verificare definitivamente UPDATE Product;
-2. implementare CREATE nel `handleFormCreate()`;
-3. verificare create/update in `ps_log`;
-4. implementare DELETE;
-5. implementare DUPLICATE;
-6. implementare bulk delete;
-7. implementare bulk duplicate;
-8. aggiungere/completare i test;
-9. verificare API/CLI no-op;
-10. ripulire TODO temporanei;
-11. decidere il branch target definitivo;
-12. soltanto dopo Product valutare altre entità.
+1. verificare manualmente e completare i test di CREATE/UPDATE Product;
+2. verificare manualmente DELETE Product in `ps_log` e completarne i test;
+3. analizzare e implementare DUPLICATE;
+4. implementare bulk delete;
+5. implementare bulk duplicate;
+6. completare i test generali e di compatibilità storica;
+7. verificare API/CLI no-op;
+8. ripulire TODO temporanei;
+9. decidere il branch target definitivo;
+10. soltanto dopo Product valutare altre entità riutilizzando i punti generici
+    già introdotti.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 

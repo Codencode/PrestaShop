@@ -8,6 +8,8 @@ declare(strict_types=1);
 
 namespace PrestaShopBundle\Controller\Admin;
 
+use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivity;
+use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityLoggerInterface;
 use PrestaShop\PrestaShop\Core\CommandBus\CommandBusInterface;
 use PrestaShop\PrestaShop\Core\Configuration\IniConfiguration;
 use PrestaShop\PrestaShop\Core\ConfigurationInterface;
@@ -70,6 +72,7 @@ class PrestaShopAdminController extends AbstractController
             GridPositionUpdaterInterface::class => GridPositionUpdaterInterface::class,
             FeatureFlagStateCheckerInterface::class => FeatureFlagStateCheckerInterface::class,
             EnvironmentInterface::class => EnvironmentInterface::class,
+            BackOfficeActivityLoggerInterface::class => BackOfficeActivityLoggerInterface::class,
         ];
     }
 
@@ -142,6 +145,11 @@ class PrestaShopAdminController extends AbstractController
     protected function dispatchQuery(mixed $query): mixed
     {
         return $this->container->get(CommandBusInterface::class)->handle($query);
+    }
+
+    protected function logBackOfficeActivity(BackOfficeActivity $activity): void
+    {
+        $this->container->get(BackOfficeActivityLoggerInterface::class)->log($activity);
     }
 
     protected function presentGrid(GridInterface $grid): array

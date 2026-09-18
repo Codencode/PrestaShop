@@ -44,42 +44,52 @@ Riferimenti:
 - [x] Verificato che UPDATE Product produca una voce in `ps_log`.
 - [x] Separato l'ID dell'activity log dalla logica ExtraProperty:
   `resolveExtraPropertyEntityId()` resta relativo a ExtraProperty.
+- [x] Spostato il logging CREATE/UPDATE nel punto finale del `FormHandler`,
+  dopo Extra Properties e hook finale.
+- [x] Implementato CREATE Product.
+- [x] Verificato CREATE Product manualmente.
+- [x] Aggiunto helper protetto generico in `PrestaShopAdminController` per
+  inoltrare `BackOfficeActivity` a `BackOfficeActivityLoggerInterface`.
+- [x] Implementato DELETE Product nei flussi all shops, shop e shop group.
+- [x] Il DELETE viene loggato soltanto dopo il successo di
+  `DeleteProductCommand`; nessun log in caso di eccezione.
+- [x] Verificato il comportamento storico di base del DELETE Product:
+  `Product deletion`, object type `Product`, object ID del prodotto.
 
-## Da verificare prima di considerare UPDATE chiuso
+## Da verificare per CREATE / UPDATE
 
-- [ ] Verificare che il log UPDATE venga prodotto nel punto finale corretto del
-  `FormHandler`, dopo tutte le operazioni che devono far parte del successo.
-- [ ] Verificare nel record `ps_log`:
+- [ ] Verificare nel record `ps_log` tutti i metadata storici rilevanti:
   - message;
   - `object_type`;
   - `object_id`;
   - severity;
   - `allow_duplicate`;
   - employee.
-- [ ] Aggiungere/aggiornare i test relativi a UPDATE.
+- [ ] Aggiungere/aggiornare i test relativi a CREATE/UPDATE.
 
-## Prossimo step: CREATE
+## CREATE
 
-- [ ] Implementare activity logging in `FormHandler::handleFormCreate()`.
-- [ ] Verificare la forma reale del valore restituito da `dataHandler->create()`.
-- [ ] Ottenere correttamente l'ID creato.
-- [ ] Non usare helper ExtraProperty soltanto per ottenere l'ID del log.
-- [ ] Eseguire il log soltanto dopo il completamento corretto dell'intero create.
-- [ ] Verificare il messaggio storico.
-- [ ] Verificare `object_type`.
-- [ ] Verificare `object_id`.
-- [ ] Verificare severity.
-- [ ] Verificare employee.
+- [x] Implementare activity logging in `FormHandler::handleFormCreate()`.
+- [x] Usare l'ID restituito da `dataHandler->create()` per l'activity log Product.
+- [x] Non usare helper ExtraProperty per ottenere l'ID del log.
+- [x] Eseguire il log soltanto dopo il completamento corretto dell'intero create.
+- [x] Verificare manualmente il funzionamento CREATE Product.
+- [ ] Completare verifica metadata storici in `ps_log`.
 - [ ] Aggiungere test CREATE.
 
 ## DELETE
 
-- [ ] Individuare il punto applicativo che rappresenta il successo effettivo del
-  delete Product.
-- [ ] Chiamare `BackOfficeActivityLoggerInterface` soltanto dopo il successo.
-- [ ] Nessun log in caso di eccezione.
-- [ ] Verificare record storico in `ps_log`.
-- [ ] Aggiungere test.
+- [x] Individuato il punto di integrazione nel layer Back Office, fuori dai
+  command handler.
+- [x] Aggiunto helper generico in `PrestaShopAdminController`.
+- [x] Integrato Product delete per all shops, shop e shop group.
+- [x] Chiamare `BackOfficeActivityLoggerInterface` soltanto dopo il successo.
+- [x] Nessun log in caso di eccezione del `DeleteProductCommand`.
+- [x] Verificato comportamento storico di base: `Product deletion`, Product,
+  object ID del prodotto.
+- [ ] Verificare manualmente il record DELETE in `ps_log`.
+- [ ] Verificare eventuali altri metadata storici rilevanti.
+- [ ] Aggiungere test DELETE.
 
 ## DUPLICATE
 
@@ -108,6 +118,20 @@ Riferimenti:
 - [ ] Verificare `BulkProductException`.
 - [ ] Modificare l'infrastruttura bulk soltanto se necessario.
 - [ ] Aggiungere test con successo parziale.
+
+## Adozione futura da parte di altre entità
+
+- [x] Pattern corrente: CREATE/UPDATE tramite generic `FormHandler` quando
+  applicabile.
+- [x] Pattern corrente: DELETE e altre operazioni BO fuori dal `FormHandler`
+  possono riutilizzare l'helper generico di `PrestaShopAdminController`.
+- [x] Mantenere specifico dell'entità il call site, non l'infrastruttura.
+- [x] Non introdurre logging nei command handler o middleware globale del
+  CommandBus soltanto per centralizzare le chiamate.
+- [ ] Per DUPLICATE verificare prima il flusso reale e la semantica storica;
+  non assumere ancora che debba usare lo stesso punto del DELETE.
+- [ ] Prima di aggiungere nuove astrazioni per altre entità, verificare se i
+  punti generici esistenti sono sufficienti.
 
 ## Scope Back Office
 
