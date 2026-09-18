@@ -27,7 +27,7 @@ class BackOfficeActivityScopeSubscriber implements EventSubscriberInterface
     }
 
     public function onKernelController(ControllerEvent $event): void
-    {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - BackOfficeActivityScopeSubscriber::onKernelController() - DA VERIFICARE
+    {
         if (!$event->isMainRequest()) {
             return;
         }
@@ -35,6 +35,7 @@ class BackOfficeActivityScopeSubscriber implements EventSubscriberInterface
         $controller = $event->getController();
         $controllerInstance = is_array($controller) ? $controller[0] : $controller;
 
+        // Activity logging is enabled only for main requests handled by a Back Office controller.
         if (!$controllerInstance instanceof PrestaShopAdminController) {
             return;
         }

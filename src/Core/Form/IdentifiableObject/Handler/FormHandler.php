@@ -153,11 +153,6 @@ final class FormHandler implements FormHandlerInterface
 
         $entityId = $this->resolveExtraPropertyEntityId($newId ?? $id);
 
-        $this->logBackOfficeActivity(
-            BackOfficeActivityType::UPDATE,
-            $entityId
-        );
-
         if (null !== $entityId) {
             $this->extraPropertiesFormDataPersister->persist(
                 $form,
@@ -170,6 +165,11 @@ final class FormHandler implements FormHandlerInterface
             'id' => $id,
             'form_data' => &$data,
         ]);
+
+        $this->logBackOfficeActivity(
+            BackOfficeActivityType::UPDATE,
+            $id
+        );
 
         return FormHandlerResult::createWithId($newId ?? $id);
     }
@@ -188,8 +188,7 @@ final class FormHandler implements FormHandlerInterface
                 'form_data' => &$data,
             ]
         );
-// TODO <cnc> ########## BACK OFFICE CRUD LOGGING ########## //////////////////// SONO ARRIVATO QUI: implmentare il loggin nella create -------------------------------------
-//TODO <cnc-notice> ///////////////////// SONO ARRIVOTO QUI /////////////////////////
+
         $id = $this->dataHandler->create($data);
 
         $entityId = $this->resolveExtraPropertyEntityId($id);
@@ -205,6 +204,11 @@ final class FormHandler implements FormHandlerInterface
             'id' => $id,
             'form_data' => &$data,
         ]);
+
+        $this->logBackOfficeActivity(
+            BackOfficeActivityType::CREATE,
+            (int) $id
+        );
 
         return FormHandlerResult::createWithId($id);
     }
@@ -253,7 +257,7 @@ final class FormHandler implements FormHandlerInterface
     private function logBackOfficeActivity(
         BackOfficeActivityType $operationType,
         ?int $objectId
-    ): void {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - FormHandler::logBackOfficeActivity() - DA VERIFICARE
+    ): void {
         if (null === $this->activityLogObjectType || null === $objectId) {
             return;
         }
