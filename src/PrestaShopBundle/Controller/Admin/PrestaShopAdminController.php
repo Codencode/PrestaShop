@@ -135,7 +135,7 @@ class PrestaShopAdminController extends AbstractController
      * Get commands bus to execute command.
      */
     protected function dispatchCommand(mixed $command): mixed
-    {
+    {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - PrestaShopAdminController::dispatchCommand() - DA VERIFICARE
         return $this->container->get(CommandBusInterface::class)->handle($command);
     }
 

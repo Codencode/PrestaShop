@@ -55,6 +55,15 @@ Riferimenti:
   `DeleteProductCommand`; nessun log in caso di eccezione.
 - [x] Verificato il comportamento storico di base del DELETE Product:
   `Product deletion`, object type `Product`, object ID del prodotto.
+- [x] Verificato manualmente DELETE Product in `ps_log`.
+- [x] Implementato BULK DELETE Product preservando i successi parziali.
+- [x] Gli ID riusciti del BULK DELETE vengono ricavati come selezione meno ID
+  contenuti nella `BulkProductException`.
+- [x] Ogni Product cancellato con successo viene loggato singolarmente tramite
+  l'helper generico di `PrestaShopAdminController`.
+- [x] Corretto il flusso BULK DELETE all-shops affinché restituisca la response
+  del bulk helper e preservi gli errori parziali.
+- [x] Verificato manualmente il funzionamento del BULK DELETE.
 
 ## Da verificare per CREATE / UPDATE
 
@@ -87,7 +96,7 @@ Riferimenti:
 - [x] Nessun log in caso di eccezione del `DeleteProductCommand`.
 - [x] Verificato comportamento storico di base: `Product deletion`, Product,
   object ID del prodotto.
-- [ ] Verificare manualmente il record DELETE in `ps_log`.
+- [x] Verificare manualmente il record DELETE in `ps_log`.
 - [ ] Verificare eventuali altri metadata storici rilevanti.
 - [ ] Aggiungere test DELETE.
 
@@ -105,10 +114,14 @@ Riferimenti:
 
 ## BULK DELETE
 
-- [ ] Loggare ogni singolo elemento riuscito.
-- [ ] Non loggare gli elementi falliti.
-- [ ] Preservare successi parziali se il bulk complessivo fallisce.
-- [ ] Aggiungere test con successo parziale.
+- [x] Loggare ogni singolo elemento riuscito.
+- [x] Non loggare gli elementi falliti.
+- [x] Preservare successi parziali se il bulk complessivo fallisce.
+- [x] Ricavare gli ID riusciti come selezione meno ID presenti nella
+  `BulkProductException`.
+- [x] Correggere il flusso all-shops per restituire la response del bulk helper.
+- [x] Verificare manualmente il funzionamento del BULK DELETE.
+- [ ] Aggiungere test automatico con successo parziale.
 
 ## BULK DUPLICATE
 

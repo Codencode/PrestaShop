@@ -29,16 +29,16 @@ final class BackOfficeActivityLogger implements BackOfficeActivityLoggerInterfac
 
     public function log(BackOfficeActivity $activity): void
     {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - BackOfficeActivityLogger::log() - DA VERIFICARE
-        if (!$this->scope->isEnabled()) {
-            return;
-        }
-
-        $message = $this->getMessage($activity);
-        if (null === $message) {
-            return;
-        }
-
         try {
+            if (!$this->scope->isEnabled()) {
+                return;
+            }
+
+            $message = $this->getMessage($activity);
+            if (null === $message) {
+                return;
+            }
+
             $this->logger->info(
                 $message,
                 [

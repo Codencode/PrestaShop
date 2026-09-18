@@ -541,6 +541,7 @@ class ProductController extends PrestaShopAdminController
             }
 
             $this->dispatchCommand(new DeleteProductCommand($productId, $shopConstraint));
+            // TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - ProductController::deleteFromAllShopsAction() - DA VERIFICARE
             $this->logBackOfficeActivity(new BackOfficeActivity(
                 BackOfficeActivityType::DELETE,
                 'Product',
@@ -574,6 +575,7 @@ class ProductController extends PrestaShopAdminController
             }
 
             $this->dispatchCommand(new DeleteProductCommand($productId, $shopConstraint));
+            // TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - ProductController::deleteFromShopAction() - DA VERIFICARE
             $this->logBackOfficeActivity(new BackOfficeActivity(
                 BackOfficeActivityType::DELETE,
                 'Product',
@@ -607,6 +609,7 @@ class ProductController extends PrestaShopAdminController
             }
 
             $this->dispatchCommand(new DeleteProductCommand($productId, $shopConstraint));
+            // TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - ProductController::deleteFromShopGroupAction() - DA VERIFICARE
             $this->logBackOfficeActivity(new BackOfficeActivity(
                 BackOfficeActivityType::DELETE,
                 'Product',
@@ -909,11 +912,7 @@ class ProductController extends PrestaShopAdminController
                 throw new MultiShopAccessDeniedException($shopConstraint);
             }
 
-            $this->bulkDeleteByShopConstraint($request, $shopConstraint);
-            $this->addFlash(
-                'success',
-                $this->trans('Successful deletion', [], 'Admin.Notifications.Success')
-            );
+            return $this->bulkDeleteByShopConstraint($request, $shopConstraint);
         } catch (Exception $e) {
             if ($e instanceof BulkProductException) {
                 return $this->jsonBulkErrors($e);
@@ -1345,17 +1344,22 @@ class ProductController extends PrestaShopAdminController
      */
     private function bulkDeleteByShopConstraint(Request $request, ShopConstraint $shopConstraint): JsonResponse
     {
+        $productIds = $this->getBulkActionIds($request, self::BULK_PRODUCT_IDS_KEY);
+
         try {
-            $this->dispatchCommand(new BulkDeleteProductCommand(
-                $this->getBulkActionIds($request, self::BULK_PRODUCT_IDS_KEY),
-                $shopConstraint
-            ));
+            $this->dispatchCommand(new BulkDeleteProductCommand($productIds, $shopConstraint));
+            $this->logBulkDeleteActivities($productIds);
             $this->addFlash(
                 'success',
                 $this->trans('Successful deletion', [], 'Admin.Notifications.Success')
             );
         } catch (Exception $e) {
             if ($e instanceof BulkProductException) {
+                $this->logBulkDeleteActivities(array_diff(
+                    $productIds,
+                    array_keys($e->getBulkExceptions())
+                ));
+
                 return $this->jsonBulkErrors($e);
             } else {
                 return $this->json(['error' => $this->getErrorMessageForException($e, $this->getErrorMessages())], Response::HTTP_BAD_REQUEST);
@@ -1363,6 +1367,25 @@ class ProductController extends PrestaShopAdminController
         }
 
         return $this->json(['success' => true]);
+    }
+
+    /**
+     * @param int[] $productIds
+     */
+    private function logBulkDeleteActivities(array $productIds): void
+    {
+        foreach ($productIds as $productId) {
+            // TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - ProductController::logBulkDeleteActivities() - DA VERIFICARE
+            //TODO <cnc-notice> //////////////////////////////////////// SONO ARRIVATO QUI ////////////////////////////////
+            // implementare duplicazione e duplicazione bulk
+            $this->logBackOfficeActivity(new BackOfficeActivity(
+                BackOfficeActivityType::DELETE,
+                'Product',
+                $productId,
+                $productId,
+                bulk: true
+            ));
+        }
     }
 
     /**

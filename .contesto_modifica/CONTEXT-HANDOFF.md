@@ -416,8 +416,40 @@ object:  Product
 object_id: product ID
 ```
 
-La verifica manuale finale del record DELETE in `ps_log` e i relativi test sono
-ancora da completare.
+La verifica manuale del DELETE Product in `ps_log` è stata eseguita con esito
+positivo. Restano da completare i test automatici e l'eventuale verifica
+esaustiva di tutti i metadata storici.
+
+---
+
+## BULK DELETE Product
+
+BULK DELETE Product è stato implementato e verificato manualmente.
+
+Il controller determina gli ID cancellati con successo come differenza tra:
+
+```text
+ID selezionati - ID presenti in BulkProductException
+```
+
+e produce un activity log `DELETE` per ogni Product riuscito tramite lo stesso
+helper generico di `PrestaShopAdminController` usato dal DELETE singolo.
+
+Questo preserva i successi parziali:
+
+```text
+item riuscito -> log
+item fallito  -> nessun log
+```
+
+Il comportamento resta quindi coerente con lo storico, dove ogni cancellazione
+riuscita viene registrata anche se il bulk complessivo contiene errori.
+
+È stato inoltre corretto il flusso `all shops` affinché restituisca la response
+del bulk helper, preservando la gestione degli errori parziali.
+
+Restano da aggiungere/completare i test automatici del bulk delete, inclusi i
+casi di successo parziale.
 
 ---
 
@@ -451,19 +483,20 @@ i source/new ID e l'`object_id` storico. Solo dopo decidere se l'helper di
 
 ## Prossimo step immediato
 
-Prima di passare oltre:
-
-1. verificare manualmente DELETE Product in `ps_log`;
-2. controllare i metadata storici rilevanti del DELETE;
-3. aggiungere/completare i test necessari per CREATE/UPDATE/DELETE.
-
-Poi procedere con:
+Il prossimo step funzionale è:
 
 ```text
 DUPLICATE
-BULK DELETE
+```
+
+Dopo DUPLICATE procedere con:
+
+```text
 BULK DUPLICATE
 ```
+
+In parallelo restano da completare i test automatici e le verifiche esaustive
+dei metadata storici per CREATE/UPDATE/DELETE/BULK DELETE.
 
 Per DUPLICATE verificare prima il flusso reale e preservare separatamente:
 

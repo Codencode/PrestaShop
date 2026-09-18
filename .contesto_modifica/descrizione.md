@@ -335,8 +335,35 @@ object_type: Product
 object_id: product ID
 ```
 
-Resta da completare la verifica manuale finale del record DELETE in `ps_log` e
-i relativi test.
+La verifica manuale del DELETE Product in `ps_log` è stata completata con
+esito positivo. Restano da completare i test automatici e l'eventuale verifica
+esaustiva di tutti i metadata storici.
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+## BULK DELETE Product
+
+BULK DELETE Product è stato implementato e verificato manualmente.
+
+Il controller ricava gli ID riusciti come differenza tra gli ID selezionati e
+gli ID contenuti nella `BulkProductException`, quindi produce un activity log
+`DELETE` per ciascun Product cancellato con successo tramite l'helper generico
+di `PrestaShopAdminController`.
+
+In questo modo un errore parziale del bulk non elimina i log delle operazioni
+già riuscite:
+
+```text
+item riuscito -> log
+item fallito  -> nessun log
+```
+
+È stato inoltre corretto il flusso `all shops` affinché restituisca la response
+del bulk helper, preservando gli errori parziali.
+
+La strategia replica il comportamento storico di logging immediato per ogni
+delete riuscito. Restano da aggiungere/completare i test automatici, in
+particolare il caso di successo parziale.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -392,9 +419,10 @@ terminata correttamente.
 
 ## BULK
 
-Le operazioni bulk devono preservare i successi parziali.
+BULK DELETE è implementato e preserva i successi parziali ricavando gli ID
+riusciti come selezione meno ID falliti presenti nella `BulkProductException`.
 
-Comportamento atteso:
+Comportamento verificato:
 
 ```text
 item 1 riuscito -> log
@@ -403,15 +431,10 @@ item 3 fallito  -> nessun log
 item 4 riuscito -> log
 ```
 
-Non aspettare necessariamente il successo dell'intero bulk per produrre i log
-dei singoli elementi riusciti.
-
-Per bulk duplicate bisogna verificare se l'infrastruttura corrente perde i
-risultati delle azioni riuscite quando viene lanciata una
-`BulkProductException`.
-
-// TODO <cnc> Verificare AbstractBulkHandler/BulkProductException e scegliere la
-// modifica minima necessaria per preservare i risultati parziali.
+Per BULK DUPLICATE bisogna invece verificare separatamente come preservare i
+risultati delle duplicazioni riuscite, perché saranno necessari almeno source
+ID e new ID e non è detto che la stessa strategia del BULK DELETE sia
+sufficiente.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -468,17 +491,15 @@ indipendenti dal logging.
 
 Ordine consigliato:
 
-1. verificare manualmente e completare i test di CREATE/UPDATE Product;
-2. verificare manualmente DELETE Product in `ps_log` e completarne i test;
-3. analizzare e implementare DUPLICATE;
-4. implementare bulk delete;
-5. implementare bulk duplicate;
-6. completare i test generali e di compatibilità storica;
-7. verificare API/CLI no-op;
-8. ripulire TODO temporanei;
-9. decidere il branch target definitivo;
-10. soltanto dopo Product valutare altre entità riutilizzando i punti generici
-    già introdotti.
+1. analizzare e implementare DUPLICATE;
+2. implementare BULK DUPLICATE;
+3. completare i test automatici di CREATE/UPDATE/DELETE/BULK DELETE;
+4. completare i test generali e di compatibilità storica;
+5. verificare API/CLI no-op;
+6. ripulire TODO temporanei;
+7. decidere il branch target definitivo;
+8. soltanto dopo Product valutare altre entità riutilizzando i punti generici
+   già introdotti.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
