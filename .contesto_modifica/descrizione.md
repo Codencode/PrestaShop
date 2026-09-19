@@ -1,5 +1,9 @@
 // TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - descrizione.md - DA ELIMINARE ALLA FINE
 
+// TODO <cnc-notice> ########## BACK OFFICE ACTIVITY LOGGING ########## ------------------------ DOVE SONO ARRIVATO
+- ho implementato i log create/update/delete per le categorie
+- il cambio di staot non è staot previsot perchè non era previsto neanche nelle vecchie versioni
+
 # BACK OFFICE ACTIVITY LOGGING
 
 // TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## ------------------------ NOTA
