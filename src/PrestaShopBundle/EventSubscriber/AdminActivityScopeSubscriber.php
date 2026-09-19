@@ -9,7 +9,7 @@ declare(strict_types=1);
 namespace PrestaShopBundle\EventSubscriber;
 
 use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
-use PrestaShopBundle\Service\Log\BackOfficeActivityScope;
+use PrestaShopBundle\Service\Log\AdminActivityScope;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -17,7 +17,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
 /**
  * Marks Back Office requests so activity logging can be enabled only for BO operations.
  */
-class BackOfficeActivityScopeSubscriber implements EventSubscriberInterface
+class AdminActivityScopeSubscriber implements EventSubscriberInterface
 {
     public static function getSubscribedEvents(): array
     {
@@ -41,7 +41,7 @@ class BackOfficeActivityScopeSubscriber implements EventSubscriberInterface
         }
 
         $event->getRequest()->attributes->set(
-            BackOfficeActivityScope::REQUEST_ATTRIBUTE,
+            AdminActivityScope::REQUEST_ATTRIBUTE,
             true
         );
     }

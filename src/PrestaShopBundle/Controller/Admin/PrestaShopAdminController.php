@@ -8,8 +8,8 @@ declare(strict_types=1);
 
 namespace PrestaShopBundle\Controller\Admin;
 
-use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivity;
-use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityLoggerInterface;
+use PrestaShop\PrestaShop\Core\ActivityLog\AdminActivity;
+use PrestaShop\PrestaShop\Core\ActivityLog\AdminActivityLoggerInterface;
 use PrestaShop\PrestaShop\Core\CommandBus\CommandBusInterface;
 use PrestaShop\PrestaShop\Core\Configuration\IniConfiguration;
 use PrestaShop\PrestaShop\Core\ConfigurationInterface;
@@ -72,7 +72,7 @@ class PrestaShopAdminController extends AbstractController
             GridPositionUpdaterInterface::class => GridPositionUpdaterInterface::class,
             FeatureFlagStateCheckerInterface::class => FeatureFlagStateCheckerInterface::class,
             EnvironmentInterface::class => EnvironmentInterface::class,
-            BackOfficeActivityLoggerInterface::class => BackOfficeActivityLoggerInterface::class,
+            AdminActivityLoggerInterface::class => AdminActivityLoggerInterface::class,
         ];
     }
 
@@ -135,7 +135,7 @@ class PrestaShopAdminController extends AbstractController
      * Get commands bus to execute command.
      */
     protected function dispatchCommand(mixed $command): mixed
-    {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - PrestaShopAdminController::dispatchCommand() - DA VERIFICARE
+    {
         return $this->container->get(CommandBusInterface::class)->handle($command);
     }
 
@@ -147,18 +147,18 @@ class PrestaShopAdminController extends AbstractController
         return $this->container->get(CommandBusInterface::class)->handle($query);
     }
 
-    protected function logBackOfficeActivity(BackOfficeActivity $activity): void
+    protected function logAdminActivity(AdminActivity $activity): void
     {
-        $this->container->get(BackOfficeActivityLoggerInterface::class)->log($activity);
+        $this->container->get(AdminActivityLoggerInterface::class)->log($activity);
     }
 
     /**
-     * @param BackOfficeActivity[] $activities
+     * @param AdminActivity[] $activities
      */
-    protected function logBackOfficeActivities(array $activities): void
+    protected function logAdminActivities(array $activities): void
     {
         foreach ($activities as $activity) {
-            $this->logBackOfficeActivity($activity);
+            $this->logAdminActivity($activity);
         }
     }
 

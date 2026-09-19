@@ -6,9 +6,9 @@
 
 namespace PrestaShop\PrestaShop\Core\Form\IdentifiableObject\Handler;
 
-use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivity;
-use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityLoggerInterface;
-use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityType;
+use PrestaShop\PrestaShop\Core\ActivityLog\AdminActivity;
+use PrestaShop\PrestaShop\Core\ActivityLog\AdminActivityLoggerInterface;
+use PrestaShop\PrestaShop\Core\ActivityLog\AdminActivityType;
 use PrestaShop\PrestaShop\Core\Domain\ApiClient\ValueObject\CreatedApiClient;
 use PrestaShop\PrestaShop\Core\ExtraProperty\Form\ExtraPropertiesFormDataPersister;
 use PrestaShop\PrestaShop\Core\Form\IdentifiableObject\DataHandler\FormDataHandlerInterface;
@@ -49,9 +49,9 @@ final class FormHandler implements FormHandlerInterface
     private $extraPropertiesFormDataPersister;
 
     /**
-     * @var BackOfficeActivityLoggerInterface
+     * @var AdminActivityLoggerInterface
      */
-    private $backOfficeActivityLogger;
+    private $adminActivityLogger;
 
     /**
      * @var string|null
@@ -64,7 +64,7 @@ final class FormHandler implements FormHandlerInterface
      * @param TranslatorInterface $translator
      * @param bool $isDemoModeEnabled
      * @param ExtraPropertiesFormDataPersister $extraPropertiesFormDataPersister
-     * @param BackOfficeActivityLoggerInterface $backOfficeActivityLogger
+     * @param AdminActivityLoggerInterface $adminActivityLogger
      * @param string|null $activityLogObjectType
      */
     public function __construct(
@@ -73,7 +73,7 @@ final class FormHandler implements FormHandlerInterface
         TranslatorInterface $translator,
         $isDemoModeEnabled,
         ExtraPropertiesFormDataPersister $extraPropertiesFormDataPersister,
-        BackOfficeActivityLoggerInterface $backOfficeActivityLogger,
+        AdminActivityLoggerInterface $adminActivityLogger,
         ?string $activityLogObjectType = null
     ) {
         $this->dataHandler = $dataHandler;
@@ -81,7 +81,7 @@ final class FormHandler implements FormHandlerInterface
         $this->translator = $translator;
         $this->isDemoModeEnabled = $isDemoModeEnabled;
         $this->extraPropertiesFormDataPersister = $extraPropertiesFormDataPersister;
-        $this->backOfficeActivityLogger = $backOfficeActivityLogger;
+        $this->adminActivityLogger = $adminActivityLogger;
         $this->activityLogObjectType = $activityLogObjectType;
     }
 
@@ -166,8 +166,8 @@ final class FormHandler implements FormHandlerInterface
             'form_data' => &$data,
         ]);
 
-        $this->logBackOfficeActivity(
-            BackOfficeActivityType::UPDATE,
+        $this->logAdminActivity(
+            AdminActivityType::UPDATE,
             $id
         );
 
@@ -205,8 +205,8 @@ final class FormHandler implements FormHandlerInterface
             'form_data' => &$data,
         ]);
 
-        $this->logBackOfficeActivity(
-            BackOfficeActivityType::CREATE,
+        $this->logAdminActivity(
+            AdminActivityType::CREATE,
             (int) $id
         );
 
@@ -254,16 +254,16 @@ final class FormHandler implements FormHandlerInterface
         return null;
     }
 
-    private function logBackOfficeActivity(
-        BackOfficeActivityType $operationType,
+    private function logAdminActivity(
+        AdminActivityType $operationType,
         ?int $objectId
     ): void {
         if (null === $this->activityLogObjectType || null === $objectId) {
             return;
         }
 
-        $this->backOfficeActivityLogger->log(
-            new BackOfficeActivity(
+        $this->adminActivityLogger->log(
+            new AdminActivity(
                 $operationType,
                 $this->activityLogObjectType,
                 $objectId,

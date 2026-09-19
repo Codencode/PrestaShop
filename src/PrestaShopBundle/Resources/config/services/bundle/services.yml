@@ -133,14 +133,14 @@ services:
 
   PrestaShop\PrestaShop\Core\Repository\TransactionManagerInterface: '@PrestaShopBundle\Service\Database\TransactionManager'
 
-  PrestaShopBundle\Service\Log\BackOfficeActivityScope:
+  PrestaShopBundle\Service\Log\AdminActivityScope:
     autowire: true
 
-  PrestaShopBundle\Service\Log\BackOfficeActivityLogger:
+  PrestaShopBundle\Service\Log\AdminActivityLogger:
     autowire: true
     arguments:
       $logger: '@logger'
 
-  PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityLoggerInterface:
-    alias: PrestaShopBundle\Service\Log\BackOfficeActivityLogger
+  PrestaShop\PrestaShop\Core\ActivityLog\AdminActivityLoggerInterface:
+    alias: PrestaShopBundle\Service\Log\AdminActivityLogger
     public: false

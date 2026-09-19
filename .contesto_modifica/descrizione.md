@@ -32,9 +32,9 @@ La pipeline prevista è:
 
 ```text
 Back Office operation
-    -> BackOfficeActivity
-    -> BackOfficeActivityLoggerInterface
-    -> BackOfficeActivityLogger
+    -> AdminActivity
+    -> AdminActivityLoggerInterface
+    -> AdminActivityLogger
     -> LoggerInterface
     -> Monolog
     -> legacy log handler esistente
@@ -46,7 +46,7 @@ Il logging deve essere best-effort: un problema nel meccanismo di activity
 logging non deve trasformare un'operazione già riuscita in un errore
 applicativo.
 
-L'intero `BackOfficeActivityLogger::log()` è protetto da `try/catch (Throwable)`,
+L'intero `AdminActivityLogger::log()` è protetto da `try/catch (Throwable)`,
 inclusi scope check, traduzione/formattazione del messaggio e invio al logger.
 
 L'infrastruttura non deve essere Product-specific.
@@ -78,20 +78,26 @@ BackOfficeCrudOperationReporterInterface
 Il naming è stato successivamente corretto perché l'astrazione non esegue una
 CRUD: descrive un'attività Back Office riuscita che deve essere registrata.
 
+
+Il naming finale usa il prefisso `Admin` per classi e metodi
+dell'infrastruttura. Lo scope resta Back Office, ma nomi come `AdminActivity`
+e `AdminActivityLogger` sono più compatti e coerenti con il naming Admin già
+presente nel progetto.
+
 La struttura corrente è:
 
 ```text
 src/Core/ActivityLog/
-    BackOfficeActivity.php
-    BackOfficeActivityType.php
-    BackOfficeActivityLoggerInterface.php
+    AdminActivity.php
+    AdminActivityType.php
+    AdminActivityLoggerInterface.php
 
 src/PrestaShopBundle/Service/Log/
-    BackOfficeActivityLogger.php
-    BackOfficeActivityScope.php
+    AdminActivityLogger.php
+    AdminActivityScope.php
 
 src/PrestaShopBundle/EventSubscriber/
-    BackOfficeActivityScopeSubscriber.php
+    AdminActivityScopeSubscriber.php
 ```
 
 Il Core contiene:
@@ -110,9 +116,9 @@ Questo mantiene separato il contratto Core dall'infrastruttura Symfony.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-## BackOfficeActivity
+## AdminActivity
 
-`BackOfficeActivity` è un piccolo DTO immutabile che descrive ciò che deve essere
+`AdminActivity` è un piccolo DTO immutabile che descrive ciò che deve essere
 registrato nell'activity log.
 
 Deve poter rappresentare almeno:
@@ -146,14 +152,14 @@ coincidere.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-## BackOfficeActivityLoggerInterface
+## AdminActivityLoggerInterface
 
 Il contratto Core è:
 
 ```php
-interface BackOfficeActivityLoggerInterface
+interface AdminActivityLoggerInterface
 {
-    public function log(BackOfficeActivity $activity): void;
+    public function log(AdminActivity $activity): void;
 }
 ```
 
@@ -168,7 +174,7 @@ Il Core non deve conoscere:
 L'implementazione concreta è:
 
 ```text
-PrestaShopBundle\Service\Log\BackOfficeActivityLogger
+PrestaShopBundle\Service\Log\AdminActivityLogger
 ```
 
 e utilizza:
@@ -189,7 +195,7 @@ Office.
 Il subscriber:
 
 ```text
-BackOfficeActivityScopeSubscriber
+AdminActivityScopeSubscriber
 ```
 
 marca la Request principale quando il controller appartiene al Back Office.
@@ -197,7 +203,7 @@ marca la Request principale quando il controller appartiene al Back Office.
 Il logger verifica poi:
 
 ```text
-BackOfficeActivityScope
+AdminActivityScope
 ```
 
 prima di produrre il record.
@@ -250,8 +256,8 @@ Il logging passa attraverso:
 
 ```text
 FormHandler
-    -> BackOfficeActivityLoggerInterface
-    -> BackOfficeActivityLogger
+    -> AdminActivityLoggerInterface
+    -> AdminActivityLogger
     -> LoggerInterface
     -> Monolog
     -> legacy handler
@@ -313,7 +319,7 @@ DELETE Product è stato implementato mantenendo il logging fuori dai command
 handler.
 
 È stato aggiunto in `PrestaShopAdminController` un helper protetto e generico
-che inoltra un `BackOfficeActivity` a `BackOfficeActivityLoggerInterface`.
+che inoltra un `AdminActivity` a `AdminActivityLoggerInterface`.
 
 `ProductController` usa questo helper dopo il successo di
 `DeleteProductCommand` nei tre flussi:
@@ -381,10 +387,10 @@ CREATE / UPDATE
 
 DELETE / DUPLICATE / STATUS / altre operazioni BO fuori dal FormHandler
     -> helper generico di PrestaShopAdminController
-    -> BackOfficeActivityLoggerInterface
+    -> AdminActivityLoggerInterface
 
 BULK
-    -> un BackOfficeActivity per ogni elemento riuscito
+    -> un AdminActivity per ogni elemento riuscito
     -> preservare sempre i successi parziali
 ```
 
@@ -404,7 +410,7 @@ Prima di aggiungere il logging:
 3. individuare il punto finale di successo dell'operazione;
 4. usare il `FormHandler` per CREATE/UPDATE quando disponibile;
 5. usare l'helper BO del controller per operazioni controller-driven;
-6. costruire un `BackOfficeActivity` mantenendo distinti source/object ID,
+6. costruire un `AdminActivity` mantenendo distinti source/object ID,
    log object ID, eventuale new object ID e flag bulk;
 7. nei bulk loggare soltanto gli elementi riusciti;
 8. se il bulk produce risultati aggiuntivi necessari al logging, conservarli
@@ -435,7 +441,7 @@ object_type = Product
 object_id   = 0
 ```
 
-Per questo `BackOfficeActivity` mantiene separati:
+Per questo `AdminActivity` mantiene separati:
 
 - source/object ID;
 - log object ID;
@@ -479,7 +485,7 @@ e questa mappa deve essere preservata anche quando il bulk termina con una
 
 Per questo l'infrastruttura bulk conserva i risultati riusciti anche in caso di
 errore aggregato. `BulkProductException` espone tali risultati in modo generico;
-non conosce `BackOfficeActivity` né il logging.
+non conosce `AdminActivity` né il logging.
 
 Il `ProductController` interpreta quei risultati e crea un activity log
 DUPLICATE per ogni elemento riuscito.
@@ -510,8 +516,8 @@ Product deactivated: <productId>
 Sono stati aggiunti:
 
 ```text
-BackOfficeActivityType::ACTIVATE
-BackOfficeActivityType::DEACTIVATE
+AdminActivityType::ACTIVATE
+AdminActivityType::DEACTIVATE
 ```
 
 e i call site sono stati inseriti nei punti condivisi del `ProductController`:
@@ -571,7 +577,7 @@ FormHandler
 command handler
 controller
 servizi Core
-BackOfficeActivityLogger
+AdminActivityLogger
 ```
 
 Non reintrodurre un evento Symfony usato soltanto come passaggio intermedio
@@ -598,7 +604,7 @@ Ordine consigliato:
 10. soltanto dopo la validazione completa di Product valutare altre entità
     riutilizzando i punti generici già introdotti.
 
-Nota: `BackOfficeActivityLogger::getMessage()` può essere ulteriormente
+Nota: `AdminActivityLogger::getMessage()` può essere ulteriormente
 semplificato/refactorizzato per mantenere leggibile la gestione dei diversi tipi,
 ma questo è un miglioramento interno e non deve cambiare la semantica storica.
 

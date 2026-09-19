@@ -11,10 +11,10 @@ namespace PrestaShop\PrestaShop\Core\ActivityLog;
 /**
  * Describes a successful Back Office activity that must be recorded in the activity log.
  */
-final class BackOfficeActivity
+final class AdminActivity
 {
     public function __construct(
-        private readonly BackOfficeActivityType $type,
+        private readonly AdminActivityType $type,
         private readonly string $objectType,
         private readonly ?int $objectId,
         private readonly ?int $logObjectId,
@@ -23,7 +23,7 @@ final class BackOfficeActivity
     ) {
     }
 
-    public function getType(): BackOfficeActivityType
+    public function getType(): AdminActivityType
     {
         return $this->type;
     }

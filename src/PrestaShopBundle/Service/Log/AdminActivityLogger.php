@@ -8,9 +8,9 @@ declare(strict_types=1);
 
 namespace PrestaShopBundle\Service\Log;
 
-use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivity;
-use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityLoggerInterface;
-use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityType;
+use PrestaShop\PrestaShop\Core\ActivityLog\AdminActivity;
+use PrestaShop\PrestaShop\Core\ActivityLog\AdminActivityLoggerInterface;
+use PrestaShop\PrestaShop\Core\ActivityLog\AdminActivityType;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Throwable;
@@ -18,17 +18,17 @@ use Throwable;
 /**
  * Logs successful Back Office activities through the standard logging infrastructure.
  */
-final class BackOfficeActivityLogger implements BackOfficeActivityLoggerInterface
+final class AdminActivityLogger implements AdminActivityLoggerInterface
 {
     public function __construct(
         private readonly LoggerInterface $logger,
-        private readonly BackOfficeActivityScope $scope,
+        private readonly AdminActivityScope $scope,
         private readonly TranslatorInterface $translator,
     ) {
     }
 
-    public function log(BackOfficeActivity $activity): void
-    {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - BackOfficeActivityLogger::log() - DA VERIFICARE
+    public function log(AdminActivity $activity): void
+    {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - AdminActivityLogger::log() - DA VERIFICARE
         try {
             if (!$this->scope->isEnabled()) {
                 return;
@@ -52,28 +52,28 @@ final class BackOfficeActivityLogger implements BackOfficeActivityLoggerInterfac
         }
     }
 
-    private function getMessage(BackOfficeActivity $activity): ?string
-    {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - BackOfficeActivityLogger::getMessage() - DA VERIFICARE
+    private function getMessage(AdminActivity $activity): ?string
+    {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - AdminActivityLogger::getMessage() - DA VERIFICARE
         return match ($activity->getType()) {
-            BackOfficeActivityType::CREATE => $this->formatMessage(
+            AdminActivityType::CREATE => $this->formatMessage(
                 '%s addition',
                 $activity->getObjectType()
             ),
-            BackOfficeActivityType::UPDATE => $this->formatMessage(
+            AdminActivityType::UPDATE => $this->formatMessage(
                 '%s modification',
                 $activity->getObjectType()
             ),
-            BackOfficeActivityType::DELETE => $this->formatMessage(
+            AdminActivityType::DELETE => $this->formatMessage(
                 '%s deletion',
                 $activity->getObjectType()
             ),
-            BackOfficeActivityType::ACTIVATE => $this->getStatusMessage($activity, true),
-            BackOfficeActivityType::DEACTIVATE => $this->getStatusMessage($activity, false),
-            BackOfficeActivityType::DUPLICATE => $this->getDuplicateMessage($activity),
+            AdminActivityType::ACTIVATE => $this->getStatusMessage($activity, true),
+            AdminActivityType::DEACTIVATE => $this->getStatusMessage($activity, false),
+            AdminActivityType::DUPLICATE => $this->getDuplicateMessage($activity),
         };
     }
 
-    private function getStatusMessage(BackOfficeActivity $activity, bool $activated): ?string
+    private function getStatusMessage(AdminActivity $activity, bool $activated): ?string
     {
         if (null === $activity->getObjectId()) {
             return null;
@@ -86,7 +86,7 @@ final class BackOfficeActivityLogger implements BackOfficeActivityLoggerInterfac
         );
     }
 
-    private function getDuplicateMessage(BackOfficeActivity $activity): ?string
+    private function getDuplicateMessage(AdminActivity $activity): ?string
     {
         if (null === $activity->getObjectId() || null === $activity->getNewObjectId()) {
             return null;

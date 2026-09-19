@@ -194,7 +194,7 @@ ps_log
 Il logging deve essere best-effort: un problema nel logging non deve rompere
 un'operazione già riuscita.
 
-`BackOfficeActivityLogger::log()` protegge l'intero flusso con `try/catch
+`AdminActivityLogger::log()` protegge l'intero flusso con `try/catch
 (Throwable)`, includendo:
 
 ```text
@@ -225,28 +225,41 @@ descrive un'attività Back Office da registrare.
 Naming attuale:
 
 ```text
-BackOfficeActivity
-BackOfficeActivityType
-BackOfficeActivityLoggerInterface
-BackOfficeActivityLogger
-BackOfficeActivityScope
-BackOfficeActivityScopeSubscriber
+AdminActivity
+AdminActivityType
+AdminActivityLoggerInterface
+AdminActivityLogger
+AdminActivityScope
+AdminActivityScopeSubscriber
+```
+
+Decisione finale di naming: il prefisso `Admin` sostituisce il precedente
+prefisso tecnico `BackOffice` nei nomi dell'infrastruttura. Lo scope funzionale
+resta comunque il Back Office; `AdminActivity` è più compatto e si allinea al
+naming già presente nel progetto (`PrestaShopAdminController`, `AdminSecurity`,
+controller `Admin*`).
+
+Gli helper del controller base sono:
+
+```text
+logAdminActivity()
+logAdminActivities()
 ```
 
 Struttura:
 
 ```text
 src/Core/ActivityLog/
-    BackOfficeActivity.php
-    BackOfficeActivityType.php
-    BackOfficeActivityLoggerInterface.php
+    AdminActivity.php
+    AdminActivityType.php
+    AdminActivityLoggerInterface.php
 
 src/PrestaShopBundle/Service/Log/
-    BackOfficeActivityLogger.php
-    BackOfficeActivityScope.php
+    AdminActivityLogger.php
+    AdminActivityScope.php
 
 src/PrestaShopBundle/EventSubscriber/
-    BackOfficeActivityScopeSubscriber.php
+    AdminActivityScopeSubscriber.php
 ```
 
 ---
@@ -255,9 +268,9 @@ src/PrestaShopBundle/EventSubscriber/
 
 ```text
 Back Office operation
-    -> BackOfficeActivity
-    -> BackOfficeActivityLoggerInterface
-    -> BackOfficeActivityLogger
+    -> AdminActivity
+    -> AdminActivityLoggerInterface
+    -> AdminActivityLogger
     -> LoggerInterface
     -> Monolog
     -> existing legacy handler
@@ -265,7 +278,7 @@ Back Office operation
     -> ps_log
 ```
 
-`BackOfficeActivityLoggerInterface` viene collegata all'implementazione concreta
+`AdminActivityLoggerInterface` viene collegata all'implementazione concreta
 tramite alias nel container Symfony.
 
 Il logger concreto usa esplicitamente il servizio core:
@@ -280,9 +293,9 @@ Il logger concreto usa esplicitamente il servizio core:
 
 Il logger deve essere no-op fuori dal Back Office.
 
-`BackOfficeActivityScopeSubscriber` marca la Request BO.
+`AdminActivityScopeSubscriber` marca la Request BO.
 
-`BackOfficeActivityScope` viene verificato dal logger prima di scrivere.
+`AdminActivityScope` viene verificato dal logger prima di scrivere.
 
 Il subscriber NON è `final` perché:
 
@@ -404,10 +417,10 @@ command handler.
 PrestaShopAdminController
 ```
 
-che inoltra un `BackOfficeActivity` a:
+che inoltra un `AdminActivity` a:
 
 ```text
-BackOfficeActivityLoggerInterface
+AdminActivityLoggerInterface
 ```
 
 `ProductController` usa questo helper soltanto dopo il successo di
@@ -479,11 +492,11 @@ CREATE / UPDATE
 
 DELETE / DUPLICATE / STATUS e altre operazioni BO fuori dal FormHandler
     -> helper generico di PrestaShopAdminController
-    -> BackOfficeActivityLoggerInterface
+    -> AdminActivityLoggerInterface
 
 BULK
     -> preservare sempre i successi parziali
-    -> costruire un BackOfficeActivity per ogni elemento riuscito
+    -> costruire un AdminActivity per ogni elemento riuscito
 ```
 
 Per future entità, riutilizzare prima questi punti generici invece di introdurre
@@ -540,7 +553,7 @@ object_type: Product
 object_id: 0
 ```
 
-`BackOfficeActivity` mantiene quindi separati:
+`AdminActivity` mantiene quindi separati:
 
 ```text
 object/source ID -> source Product ID
@@ -579,7 +592,7 @@ lanciare una `BulkProductException`, e `BulkProductException` espone tali
 risultati senza conoscere nulla dell'activity logging.
 
 Il controller usa quindi i risultati riusciti per produrre un
-`BackOfficeActivity::DUPLICATE` per ogni duplicazione completata.
+`AdminActivity::DUPLICATE` per ogni duplicazione completata.
 
 Questa modifica deve restare generica:
 

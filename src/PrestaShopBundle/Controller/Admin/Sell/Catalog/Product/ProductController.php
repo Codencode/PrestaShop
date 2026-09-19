@@ -16,8 +16,8 @@ use PrestaShop\PrestaShop\Adapter\LegacyContext;
 use PrestaShop\PrestaShop\Adapter\Module\ModuleDataProvider;
 use PrestaShop\PrestaShop\Adapter\Product\Repository\ProductRepository;
 use PrestaShop\PrestaShop\Adapter\Shop\Url\ProductPreviewProvider;
-use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivity;
-use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityType;
+use PrestaShop\PrestaShop\Core\ActivityLog\AdminActivity;
+use PrestaShop\PrestaShop\Core\ActivityLog\AdminActivityType;
 use PrestaShop\PrestaShop\Core\Domain\Product\Command\BulkDeleteProductCommand;
 use PrestaShop\PrestaShop\Core\Domain\Product\Command\BulkDuplicateProductCommand;
 use PrestaShop\PrestaShop\Core\Domain\Product\Command\BulkUpdateProductStatusCommand;
@@ -542,8 +542,8 @@ class ProductController extends PrestaShopAdminController
 
             $this->dispatchCommand(new DeleteProductCommand($productId, $shopConstraint));
 
-            $this->logBackOfficeActivity(new BackOfficeActivity(
-                BackOfficeActivityType::DELETE,
+            $this->logAdminActivity(new AdminActivity(
+                AdminActivityType::DELETE,
                 'Product',
                 $productId,
                 $productId
@@ -577,8 +577,8 @@ class ProductController extends PrestaShopAdminController
 
             $this->dispatchCommand(new DeleteProductCommand($productId, $shopConstraint));
 
-            $this->logBackOfficeActivity(new BackOfficeActivity(
-                BackOfficeActivityType::DELETE,
+            $this->logAdminActivity(new AdminActivity(
+                AdminActivityType::DELETE,
                 'Product',
                 $productId,
                 $productId
@@ -612,8 +612,8 @@ class ProductController extends PrestaShopAdminController
 
             $this->dispatchCommand(new DeleteProductCommand($productId, $shopConstraint));
 
-            $this->logBackOfficeActivity(new BackOfficeActivity(
-                BackOfficeActivityType::DELETE,
+            $this->logAdminActivity(new AdminActivity(
+                AdminActivityType::DELETE,
                 'Product',
                 $productId,
                 $productId
@@ -1330,8 +1330,8 @@ class ProductController extends PrestaShopAdminController
                 $productId,
                 $shopConstraint
             ));
-            $this->logBackOfficeActivity(new BackOfficeActivity(
-                BackOfficeActivityType::DUPLICATE,
+            $this->logAdminActivity(new AdminActivity(
+                AdminActivityType::DUPLICATE,
                 'Product',
                 $productId,
                 0,
@@ -1392,8 +1392,8 @@ class ProductController extends PrestaShopAdminController
     {
         $activities = [];
         foreach ($productIds as $productId) {
-            $activities[] = new BackOfficeActivity(
-                BackOfficeActivityType::DELETE,
+            $activities[] = new AdminActivity(
+                AdminActivityType::DELETE,
                 'Product',
                 $productId,
                 $productId,
@@ -1401,7 +1401,7 @@ class ProductController extends PrestaShopAdminController
             );
         }
 
-        $this->logBackOfficeActivities($activities);
+        $this->logAdminActivities($activities);
     }
 
     /**
@@ -1411,8 +1411,8 @@ class ProductController extends PrestaShopAdminController
     {
         $activities = [];
         foreach ($duplicatedProductIds as $sourceProductId => $newProductId) {
-            $activities[] = new BackOfficeActivity(
-                BackOfficeActivityType::DUPLICATE,
+            $activities[] = new AdminActivity(
+                AdminActivityType::DUPLICATE,
                 'Product',
                 $sourceProductId,
                 0,
@@ -1421,7 +1421,7 @@ class ProductController extends PrestaShopAdminController
             );
         }
 
-        $this->logBackOfficeActivities($activities);
+        $this->logAdminActivities($activities);
     }
 
     /**
@@ -1545,8 +1545,8 @@ class ProductController extends PrestaShopAdminController
 
     private function logProductStatusActivity(int $productId, bool $isEnabled, bool $bulk = false): void
     {
-        $this->logBackOfficeActivity(new BackOfficeActivity(
-            $isEnabled ? BackOfficeActivityType::ACTIVATE : BackOfficeActivityType::DEACTIVATE,
+        $this->logAdminActivity(new AdminActivity(
+            $isEnabled ? AdminActivityType::ACTIVATE : AdminActivityType::DEACTIVATE,
             'Product',
             $productId,
             $productId,
@@ -1561,8 +1561,8 @@ class ProductController extends PrestaShopAdminController
     {
         $activities = [];
         foreach ($productIds as $productId) {
-            $activities[] = new BackOfficeActivity(
-                $isEnabled ? BackOfficeActivityType::ACTIVATE : BackOfficeActivityType::DEACTIVATE,
+            $activities[] = new AdminActivity(
+                $isEnabled ? AdminActivityType::ACTIVATE : AdminActivityType::DEACTIVATE,
                 'Product',
                 $productId,
                 $productId,
@@ -1570,7 +1570,7 @@ class ProductController extends PrestaShopAdminController
             );
         }
 
-        $this->logBackOfficeActivities($activities);
+        $this->logAdminActivities($activities);
     }
 
     /**

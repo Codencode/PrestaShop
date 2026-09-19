@@ -22,19 +22,23 @@ Riferimenti:
 - [x] Passaggio a `Psr\Log\LoggerInterface` / Monolog.
 - [x] Logging reso best-effort nel concrete logger.
 - [x] Refactoring naming da CRUD reporting ad ActivityLog.
+- [x] Rinominata l'infrastruttura tecnica con prefisso `AdminActivity*`.
+- [x] Rinominati gli helper controller in `logAdminActivity()` /
+  `logAdminActivities()`.
+- [x] Rinominato l'attributo interno di scope in `_admin_activity_logging`.
 - [x] Creato `Core\ActivityLog`.
 - [x] Creati:
-  - `BackOfficeActivity`
-  - `BackOfficeActivityType`
-  - `BackOfficeActivityLoggerInterface`
+  - `AdminActivity`
+  - `AdminActivityType`
+  - `AdminActivityLoggerInterface`
 - [x] Spostata l'implementazione Symfony sotto `PrestaShopBundle\Service\Log`.
 - [x] Creati:
-  - `BackOfficeActivityLogger`
-  - `BackOfficeActivityScope`
-  - `BackOfficeActivityScopeSubscriber`
+  - `AdminActivityLogger`
+  - `AdminActivityScope`
+  - `AdminActivityScopeSubscriber`
 - [x] Sistemato il problema lazy proxy del subscriber mantenendolo non `final`.
 - [x] Configurato alias DI:
-  `BackOfficeActivityLoggerInterface -> BackOfficeActivityLogger`.
+  `AdminActivityLoggerInterface -> AdminActivityLogger`.
 - [x] Sistemato il wiring della `FormHandlerFactory`.
 - [x] Rinominato `crudActivityObjectType` in `activityLogObjectType`.
 - [x] Configurato Product come consumer opt-in con object type `Product`.
@@ -49,7 +53,7 @@ Riferimenti:
 - [x] Implementato CREATE Product.
 - [x] Verificato CREATE Product manualmente.
 - [x] Aggiunto helper protetto generico in `PrestaShopAdminController` per
-  inoltrare `BackOfficeActivity` a `BackOfficeActivityLoggerInterface`.
+  inoltrare `AdminActivity` a `AdminActivityLoggerInterface`.
 - [x] Implementato DELETE Product nei flussi all shops, shop e shop group.
 - [x] Il DELETE viene loggato soltanto dopo il successo di
   `DeleteProductCommand`; nessun log in caso di eccezione.
@@ -64,7 +68,7 @@ Riferimenti:
 - [x] Corretto il flusso BULK DELETE all-shops affinché restituisca la response
   del bulk helper e preservi gli errori parziali.
 - [x] Verificato manualmente il funzionamento del BULK DELETE.
-- [x] Reso `BackOfficeActivityLogger::log()` completamente best-effort,
+- [x] Reso `AdminActivityLogger::log()` completamente best-effort,
   includendo scope check, message building e logger nel `try/catch`.
 - [x] Verificato storicamente DUPLICATE Product:
   `Product duplicated: (from <sourceId> to <newId>).`.
@@ -106,7 +110,7 @@ Riferimenti:
   command handler.
 - [x] Aggiunto helper generico in `PrestaShopAdminController`.
 - [x] Integrato Product delete per all shops, shop e shop group.
-- [x] Chiamare `BackOfficeActivityLoggerInterface` soltanto dopo il successo.
+- [x] Chiamare `AdminActivityLoggerInterface` soltanto dopo il successo.
 - [x] Nessun log in caso di eccezione del `DeleteProductCommand`.
 - [x] Verificato comportamento storico di base: `Product deletion`, Product,
   object ID del prodotto.
@@ -155,8 +159,8 @@ Riferimenti:
 
 ## ACTIVATE / DEACTIVATE
 
-- [x] Aggiungere `BackOfficeActivityType::ACTIVATE`.
-- [x] Aggiungere `BackOfficeActivityType::DEACTIVATE`.
+- [x] Aggiungere `AdminActivityType::ACTIVATE`.
+- [x] Aggiungere `AdminActivityType::DEACTIVATE`.
 - [x] Integrare logging nel toggle Product.
 - [x] Integrare logging nei flussi enable/disable espliciti.
 - [x] Integrare BULK ACTIVATE/DEACTIVATE.
@@ -191,7 +195,7 @@ Procedura sintetica per una nuova entità:
 2. individuare il punto finale di successo;
 3. usare `FormHandler` per CREATE/UPDATE quando disponibile;
 4. usare l'helper BO del controller per operazioni controller-driven;
-5. costruire `BackOfficeActivity` con ID semanticamente corretti;
+5. costruire `AdminActivity` con ID semanticamente corretti;
 6. per i bulk loggare solo i successi e preservare eventuali risultati
    aggiuntivi;
 7. verificare BO/API/CLI;
@@ -206,7 +210,7 @@ Procedura sintetica per una nuova entità:
 
 ## Test generali
 
-- [ ] Test unitari di `BackOfficeActivityLogger`.
+- [ ] Test unitari di `AdminActivityLogger`.
 - [ ] Test dello scope.
 - [ ] Test FormHandler create/update.
 - [ ] Test delete/duplicate.

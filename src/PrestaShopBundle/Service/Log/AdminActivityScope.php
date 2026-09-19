@@ -13,9 +13,9 @@ use Symfony\Component\HttpFoundation\RequestStack;
 /**
  * Determines whether Back Office activity logging is enabled for the current request.
  */
-final class BackOfficeActivityScope
+final class AdminActivityScope
 {
-    public const REQUEST_ATTRIBUTE = '_back_office_activity_logging';
+    public const REQUEST_ATTRIBUTE = '_admin_activity_logging';
 
     public function __construct(
         private readonly RequestStack $requestStack,
@@ -23,7 +23,7 @@ final class BackOfficeActivityScope
     }
 
     public function isEnabled(): bool
-    {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - BackOfficeActivityScope::isEnabled() - DA VERIFICARE
+    {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - AdminActivityScope::isEnabled() - DA VERIFICARE
         return true === $this->requestStack
             ->getMainRequest()
             ?->attributes

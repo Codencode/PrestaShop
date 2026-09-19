@@ -6,7 +6,7 @@
 
 namespace PrestaShop\PrestaShop\Core\Form\IdentifiableObject\Handler;
 
-use PrestaShop\PrestaShop\Core\ActivityLog\BackOfficeActivityLoggerInterface;
+use PrestaShop\PrestaShop\Core\ActivityLog\AdminActivityLoggerInterface;
 use PrestaShop\PrestaShop\Core\ExtraProperty\Form\ExtraPropertiesFormDataPersister;
 use PrestaShop\PrestaShop\Core\Form\IdentifiableObject\DataHandler\FormDataHandlerInterface;
 use PrestaShop\PrestaShop\Core\Hook\HookDispatcherInterface;
@@ -38,9 +38,9 @@ final class FormHandlerFactory implements FormHandlerFactoryInterface
     private $extraPropertiesFormDataPersister;
 
     /**
-     * @var BackOfficeActivityLoggerInterface
+     * @var AdminActivityLoggerInterface
      */
-    private $backOfficeActivityLogger;
+    private $adminActivityLogger;
 
     /**
      * @param HookDispatcherInterface $hookDispatcher
@@ -53,13 +53,13 @@ final class FormHandlerFactory implements FormHandlerFactoryInterface
         TranslatorInterface $translator,
         $isDemoModeEnabled,
         ExtraPropertiesFormDataPersister $extraPropertiesFormDataPersister,
-        BackOfficeActivityLoggerInterface $backOfficeActivityLogger
+        AdminActivityLoggerInterface $adminActivityLogger
     ) {
         $this->hookDispatcher = $hookDispatcher;
         $this->translator = $translator;
         $this->isDemoModeEnabled = $isDemoModeEnabled;
         $this->extraPropertiesFormDataPersister = $extraPropertiesFormDataPersister;
-        $this->backOfficeActivityLogger = $backOfficeActivityLogger;
+        $this->adminActivityLogger = $adminActivityLogger;
     }
 
     /**
@@ -75,7 +75,7 @@ final class FormHandlerFactory implements FormHandlerFactoryInterface
             $this->translator,
             $this->isDemoModeEnabled,
             $this->extraPropertiesFormDataPersister,
-            $this->backOfficeActivityLogger,
+            $this->adminActivityLogger,
             $activityLogObjectType
         );
     }

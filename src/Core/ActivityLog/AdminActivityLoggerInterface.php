@@ -8,12 +8,10 @@ declare(strict_types=1);
 
 namespace PrestaShop\PrestaShop\Core\ActivityLog;
 
-enum BackOfficeActivityType: string
+/**
+ * Logs successful Back Office activities without exposing infrastructure details to Core.
+ */
+interface AdminActivityLoggerInterface
 {
-    case CREATE = 'create';
-    case UPDATE = 'update';
-    case DELETE = 'delete';
-    case DUPLICATE = 'duplicate';
-    case ACTIVATE = 'activate';
-    case DEACTIVATE = 'deactivate';
+    public function log(AdminActivity $activity): void;
 }
