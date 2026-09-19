@@ -46,6 +46,9 @@ Il logging deve essere best-effort: un problema nel meccanismo di activity
 logging non deve trasformare un'operazione già riuscita in un errore
 applicativo.
 
+L'intero `BackOfficeActivityLogger::log()` è protetto da `try/catch (Throwable)`,
+inclusi scope check, traduzione/formattazione del messaggio e invio al logger.
+
 L'infrastruttura non deve essere Product-specific.
 
 Product viene usato come primo consumer completo per validare:
@@ -376,48 +379,77 @@ questa distinzione:
 CREATE / UPDATE
     -> generic FormHandler
 
-DELETE e altre operazioni BO fuori dal FormHandler
+DELETE / DUPLICATE / STATUS / altre operazioni BO fuori dal FormHandler
     -> helper generico di PrestaShopAdminController
     -> BackOfficeActivityLoggerInterface
+
+BULK
+    -> un BackOfficeActivity per ogni elemento riuscito
+    -> preservare sempre i successi parziali
 ```
 
 Il call site può essere specifico dell'entità; l'infrastruttura non deve
 esserlo.
 
-Prima di creare nuove astrazioni, verificare se questi punti generici sono già
-sufficienti.
-
 Non introdurre activity logging nei command handler o middleware globale del
 CommandBus soltanto per semplificare l'adozione da parte di nuove entità.
 
-DUPLICATE non è ancora stata implementata. Prima di decidere se usare anche in
-quel caso l'helper di `PrestaShopAdminController`, verificare il flusso reale e
-la semantica storica di source ID, new ID e log object ID.
+### Procedura per una nuova entità
+
+Prima di aggiungere il logging:
+
+1. verificare quali operazioni venivano storicamente registrate;
+2. verificare `message`, `object_type`, `object_id`, severity,
+   `allow_duplicate` ed employee;
+3. individuare il punto finale di successo dell'operazione;
+4. usare il `FormHandler` per CREATE/UPDATE quando disponibile;
+5. usare l'helper BO del controller per operazioni controller-driven;
+6. costruire un `BackOfficeActivity` mantenendo distinti source/object ID,
+   log object ID, eventuale new object ID e flag bulk;
+7. nei bulk loggare soltanto gli elementi riusciti;
+8. se il bulk produce risultati aggiuntivi necessari al logging, conservarli
+   nel contratto bulk in modo generico;
+9. verificare API/CLI no-op;
+10. validare il risultato reale in `ps_log`.
+
+Il Product dimostra che `object_id` non è necessariamente uguale al source ID o
+al new ID: DUPLICATE usa storicamente `object_id = 0`.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ## DUPLICATE
 
-La duplication deve usare lo stesso logger e preservare:
+DUPLICATE Product è stato implementato usando lo stesso logger e l'helper
+generico di `PrestaShopAdminController`.
 
-- source ID;
-- new ID;
-- log object ID.
-
-Messaggio storico da verificare:
+Il comportamento storico verificato manualmente è:
 
 ```text
 Product duplicated: (from <sourceId> to <newId>).
 ```
 
-Il record deve essere prodotto soltanto dopo che l'intera duplicazione è
-terminata correttamente.
+con:
 
-// TODO <cnc> Verificare message e object_id storici della duplication Product.
+```text
+object_type = Product
+object_id   = 0
+```
+
+Per questo `BackOfficeActivity` mantiene separati:
+
+- source/object ID;
+- log object ID;
+- new object ID.
+
+Il record viene prodotto soltanto dopo il successo della duplicazione.
+
+Resta da verificare manualmente il record prodotto dalla nuova implementazione.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ## BULK
+
+### BULK DELETE
 
 BULK DELETE è implementato e preserva i successi parziali ricavando gli ID
 riusciti come selezione meno ID falliti presenti nella `BulkProductException`.
@@ -431,10 +463,73 @@ item 3 fallito  -> nessun log
 item 4 riuscito -> log
 ```
 
-Per BULK DUPLICATE bisogna invece verificare separatamente come preservare i
-risultati delle duplicazioni riuscite, perché saranno necessari almeno source
-ID e new ID e non è detto che la stessa strategia del BULK DELETE sia
-sufficiente.
+### BULK DUPLICATE
+
+BULK DUPLICATE è stato implementato, ma richiede una strategia diversa dal
+DELETE.
+
+Il risultato utile è:
+
+```text
+sourceProductId => new ProductId
+```
+
+e questa mappa deve essere preservata anche quando il bulk termina con una
+`BulkProductException`.
+
+Per questo l'infrastruttura bulk conserva i risultati riusciti anche in caso di
+errore aggregato. `BulkProductException` espone tali risultati in modo generico;
+non conosce `BackOfficeActivity` né il logging.
+
+Il `ProductController` interpreta quei risultati e crea un activity log
+DUPLICATE per ogni elemento riuscito.
+
+Restano da verificare manualmente il caso completamente riuscito e il successo
+parziale.
+
+### BULK STATUS
+
+ACTIVATE/DEACTIVATE bulk riusano invece la strategia del DELETE:
+
+```text
+selected IDs - failed IDs = successful IDs
+```
+
+perché non è necessario preservare un nuovo ID.
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+## ACTIVATE / DEACTIVATE Product
+
+Lo storico include anche activity log relativi allo stato Product, ad esempio:
+
+```text
+Product deactivated: <productId>
+```
+
+Sono stati aggiunti:
+
+```text
+BackOfficeActivityType::ACTIVATE
+BackOfficeActivityType::DEACTIVATE
+```
+
+e i call site sono stati inseriti nei punti condivisi del `ProductController`:
+
+```text
+updateProductStatusByShopConstraint()
+toggleProductStatusByShopConstraint()
+bulkUpdateProductStatus()
+```
+
+Il log viene prodotto soltanto dopo il successo dell'update dello stato.
+
+Per i bulk vengono preservati i successi parziali con la stessa strategia del
+BULK DELETE.
+
+L'implementazione è presente ma la verifica manuale in `ps_log` è ancora da
+completare. Il formato storico completo di ACTIVATE e i metadata devono essere
+confermati prima della chiusura.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -491,15 +586,21 @@ indipendenti dal logging.
 
 Ordine consigliato:
 
-1. analizzare e implementare DUPLICATE;
-2. implementare BULK DUPLICATE;
-3. completare i test automatici di CREATE/UPDATE/DELETE/BULK DELETE;
-4. completare i test generali e di compatibilità storica;
-5. verificare API/CLI no-op;
-6. ripulire TODO temporanei;
-7. decidere il branch target definitivo;
-8. soltanto dopo Product valutare altre entità riutilizzando i punti generici
-   già introdotti.
+1. verificare manualmente DUPLICATE singolo;
+2. verificare BULK DUPLICATE, incluso successo parziale;
+3. verificare ACTIVATE/DEACTIVATE singoli;
+4. verificare BULK ACTIVATE/BULK DEACTIVATE;
+5. completare la verifica dei metadata storici di tutte le activity Product;
+6. aggiungere/completare i test automatici;
+7. verificare esplicitamente Back Office / API / CLI;
+8. ripulire TODO temporanei;
+9. decidere il branch target definitivo;
+10. soltanto dopo la validazione completa di Product valutare altre entità
+    riutilizzando i punti generici già introdotti.
+
+Nota: `BackOfficeActivityLogger::getMessage()` può essere ulteriormente
+semplificato/refactorizzato per mantenere leggibile la gestione dei diversi tipi,
+ma questo è un miglioramento interno e non deve cambiare la semantica storica.
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 

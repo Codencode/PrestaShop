@@ -64,6 +64,20 @@ Riferimenti:
 - [x] Corretto il flusso BULK DELETE all-shops affinché restituisca la response
   del bulk helper e preservi gli errori parziali.
 - [x] Verificato manualmente il funzionamento del BULK DELETE.
+- [x] Reso `BackOfficeActivityLogger::log()` completamente best-effort,
+  includendo scope check, message building e logger nel `try/catch`.
+- [x] Verificato storicamente DUPLICATE Product:
+  `Product duplicated: (from <sourceId> to <newId>).`.
+- [x] Verificato storicamente `object_id = 0` per DUPLICATE Product.
+- [x] Implementato DUPLICATE Product singolo dopo il successo del command.
+- [x] Implementato BULK DUPLICATE preservando `sourceProductId => new ProductId`.
+- [x] Estesa `BulkProductException` per conservare genericamente i risultati
+  riusciti quando il bulk termina con errori parziali.
+- [x] Mantenuto l'activity logging fuori da `AbstractBulkHandler` e dai command
+  handler.
+- [x] Aggiunti i tipi `ACTIVATE` e `DEACTIVATE`.
+- [x] Implementato logging status nei flussi singoli/toggle Product.
+- [x] Implementato logging BULK ACTIVATE/DEACTIVATE con successi parziali.
 
 ## Da verificare per CREATE / UPDATE
 
@@ -102,14 +116,16 @@ Riferimenti:
 
 ## DUPLICATE
 
-- [ ] Implementare l'activity logging.
-- [ ] Preservare:
+- [x] Implementare l'activity logging.
+- [x] Preservare:
   - source ID;
   - new ID;
   - log object ID.
-- [ ] Verificare messaggio storico:
+- [x] Verificare messaggio storico:
   `Product duplicated: (from <sourceId> to <newId>).`
-- [ ] Verificare `object_id` storico.
+- [x] Verificare `object_id` storico: `0`.
+- [x] Loggare soltanto dopo il successo della duplicazione.
+- [ ] Verificare manualmente il record prodotto dalla nuova implementazione.
 - [ ] Aggiungere test.
 
 ## BULK DELETE
@@ -125,26 +141,61 @@ Riferimenti:
 
 ## BULK DUPLICATE
 
-- [ ] Loggare ogni singola duplicazione riuscita.
-- [ ] Preservare source/new ID.
-- [ ] Verificare `AbstractBulkHandler`.
-- [ ] Verificare `BulkProductException`.
-- [ ] Modificare l'infrastruttura bulk soltanto se necessario.
+- [x] Loggare ogni singola duplicazione riuscita.
+- [x] Preservare source/new ID.
+- [x] Verificare `AbstractBulkHandler`.
+- [x] Verificare `BulkProductException`.
+- [x] Preservare i risultati riusciti `sourceProductId => new ProductId` anche
+  quando viene lanciata la bulk exception.
+- [x] Mantenere generica l'infrastruttura bulk, senza dipendenze dall'activity
+  logging.
+- [ ] Verificare manualmente bulk completamente riuscito.
+- [ ] Verificare manualmente successo parziale.
 - [ ] Aggiungere test con successo parziale.
+
+## ACTIVATE / DEACTIVATE
+
+- [x] Aggiungere `BackOfficeActivityType::ACTIVATE`.
+- [x] Aggiungere `BackOfficeActivityType::DEACTIVATE`.
+- [x] Integrare logging nel toggle Product.
+- [x] Integrare logging nei flussi enable/disable espliciti.
+- [x] Integrare BULK ACTIVATE/DEACTIVATE.
+- [x] Preservare successi parziali nei bulk status con:
+  `selected IDs - failed IDs`.
+- [ ] Verificare manualmente `Product activated: <id>`.
+- [ ] Verificare manualmente `Product deactivated: <id>`.
+- [ ] Verificare `object_id` e gli altri metadata storici.
+- [ ] Aggiungere test singoli e bulk.
 
 ## Adozione futura da parte di altre entità
 
 - [x] Pattern corrente: CREATE/UPDATE tramite generic `FormHandler` quando
   applicabile.
-- [x] Pattern corrente: DELETE e altre operazioni BO fuori dal `FormHandler`
-  possono riutilizzare l'helper generico di `PrestaShopAdminController`.
+- [x] Pattern corrente: DELETE/DUPLICATE/STATUS e altre operazioni BO fuori dal
+  `FormHandler` possono riutilizzare l'helper generico di
+  `PrestaShopAdminController`.
 - [x] Mantenere specifico dell'entità il call site, non l'infrastruttura.
 - [x] Non introdurre logging nei command handler o middleware globale del
   CommandBus soltanto per centralizzare le chiamate.
-- [ ] Per DUPLICATE verificare prima il flusso reale e la semantica storica;
-  non assumere ancora che debba usare lo stesso punto del DELETE.
-- [ ] Prima di aggiungere nuove astrazioni per altre entità, verificare se i
-  punti generici esistenti sono sufficienti.
+- [x] Per i bulk preservare i successi parziali.
+- [x] Se servono dati aggiuntivi del successo bulk, conservarli genericamente
+  nel contratto bulk, non nel logging.
+- [x] Non assumere che `object_id` coincida con source/new ID.
+- [ ] Per ogni nuova entità ricostruire prima operazioni e metadata storici.
+- [ ] Verificare prima i punti generici esistenti prima di creare nuove
+  astrazioni.
+
+Procedura sintetica per una nuova entità:
+
+1. verificare comportamento storico e metadata;
+2. individuare il punto finale di successo;
+3. usare `FormHandler` per CREATE/UPDATE quando disponibile;
+4. usare l'helper BO del controller per operazioni controller-driven;
+5. costruire `BackOfficeActivity` con ID semanticamente corretti;
+6. per i bulk loggare solo i successi e preservare eventuali risultati
+   aggiuntivi;
+7. verificare BO/API/CLI;
+8. confrontare il record reale in `ps_log`.
 
 ## Scope Back Office
 
@@ -161,7 +212,7 @@ Riferimenti:
 - [ ] Test delete/duplicate.
 - [ ] Test bulk.
 - [ ] Test compatibilità storica di `ps_log`.
-- [ ] Verificare che un errore del logger non rompa l'operazione principale.
+- [ ] Aggiungere un test che dimostri che errori di scope/message/logger non rompono l'operazione principale.
 
 ## Prima della PR
 

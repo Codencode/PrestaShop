@@ -152,6 +152,16 @@ class PrestaShopAdminController extends AbstractController
         $this->container->get(BackOfficeActivityLoggerInterface::class)->log($activity);
     }
 
+    /**
+     * @param BackOfficeActivity[] $activities
+     */
+    protected function logBackOfficeActivities(array $activities): void
+    {
+        foreach ($activities as $activity) {
+            $this->logBackOfficeActivity($activity);
+        }
+    }
+
     protected function presentGrid(GridInterface $grid): array
     {
         return $this->container->get(GridPresenterInterface::class)->present($grid);

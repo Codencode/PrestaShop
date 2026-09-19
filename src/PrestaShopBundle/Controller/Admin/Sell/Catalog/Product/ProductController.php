@@ -541,13 +541,14 @@ class ProductController extends PrestaShopAdminController
             }
 
             $this->dispatchCommand(new DeleteProductCommand($productId, $shopConstraint));
-            // TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - ProductController::deleteFromAllShopsAction() - DA VERIFICARE
+
             $this->logBackOfficeActivity(new BackOfficeActivity(
                 BackOfficeActivityType::DELETE,
                 'Product',
                 $productId,
                 $productId
             ));
+
             $this->addFlash(
                 'success',
                 $this->trans('Successful deletion', [], 'Admin.Notifications.Success')
@@ -575,13 +576,14 @@ class ProductController extends PrestaShopAdminController
             }
 
             $this->dispatchCommand(new DeleteProductCommand($productId, $shopConstraint));
-            // TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - ProductController::deleteFromShopAction() - DA VERIFICARE
+
             $this->logBackOfficeActivity(new BackOfficeActivity(
                 BackOfficeActivityType::DELETE,
                 'Product',
                 $productId,
                 $productId
             ));
+
             $this->addFlash(
                 'success',
                 $this->trans('Successful deletion', [], 'Admin.Notifications.Success')
@@ -609,13 +611,14 @@ class ProductController extends PrestaShopAdminController
             }
 
             $this->dispatchCommand(new DeleteProductCommand($productId, $shopConstraint));
-            // TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - ProductController::deleteFromShopGroupAction() - DA VERIFICARE
+
             $this->logBackOfficeActivity(new BackOfficeActivity(
                 BackOfficeActivityType::DELETE,
                 'Product',
                 $productId,
                 $productId
             ));
+
             $this->addFlash(
                 'success',
                 $this->trans('Successful deletion', [], 'Admin.Notifications.Success')
@@ -1398,7 +1401,7 @@ class ProductController extends PrestaShopAdminController
             );
         }
 
-        $this->logBulkActivities($activities);
+        $this->logBackOfficeActivities($activities);
     }
 
     /**
@@ -1418,17 +1421,7 @@ class ProductController extends PrestaShopAdminController
             );
         }
 
-        $this->logBulkActivities($activities);
-    }
-
-    /**
-     * @param BackOfficeActivity[] $activities
-     */
-    private function logBulkActivities(array $activities): void
-    {
-        foreach ($activities as $activity) {
-            $this->logBackOfficeActivity($activity);
-        }
+        $this->logBackOfficeActivities($activities);
     }
 
     /**
@@ -1577,7 +1570,7 @@ class ProductController extends PrestaShopAdminController
             );
         }
 
-        $this->logBulkActivities($activities);
+        $this->logBackOfficeActivities($activities);
     }
 
     /**

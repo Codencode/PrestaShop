@@ -54,64 +54,61 @@ final class BackOfficeActivityLogger implements BackOfficeActivityLoggerInterfac
 
     private function getMessage(BackOfficeActivity $activity): ?string
     {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - BackOfficeActivityLogger::getMessage() - DA VERIFICARE
-        if (BackOfficeActivityType::DUPLICATE === $activity->getType()) {
-            if (null === $activity->getObjectId() || null === $activity->getNewObjectId()) {
-                return null;
-            }
-
-            return sprintf(
-                $this->translator->trans(
-                    '%s duplicated: (from %d to %d).',
-                    [],
-                    'Admin.Advparameters.Feature'
-                ),
-                $activity->getObjectType(),
-                $activity->getObjectId(),
-                $activity->getNewObjectId()
-            );
-        }
-
-        if (
-            BackOfficeActivityType::ACTIVATE === $activity->getType()
-            || BackOfficeActivityType::DEACTIVATE === $activity->getType()
-        ) {
-            if (null === $activity->getObjectId()) {
-                return null;
-            }
-
-            $message = BackOfficeActivityType::ACTIVATE === $activity->getType()
-                ? '%s activated: %d'
-                : '%s deactivated: %d';
-
-            return sprintf(
-                $this->translator->trans(
-                    $message,
-                    [],
-                    'Admin.Advparameters.Feature'
-                ),
-                $activity->getObjectType(),
-                $activity->getObjectId()
-            );
-        }
-
-        $message = match ($activity->getType()) {
-            BackOfficeActivityType::CREATE => '%s addition',
-            BackOfficeActivityType::UPDATE => '%s modification',
-            BackOfficeActivityType::DELETE => '%s deletion',
-            default => null,
+        return match ($activity->getType()) {
+            BackOfficeActivityType::CREATE => $this->formatMessage(
+                '%s addition',
+                $activity->getObjectType()
+            ),
+            BackOfficeActivityType::UPDATE => $this->formatMessage(
+                '%s modification',
+                $activity->getObjectType()
+            ),
+            BackOfficeActivityType::DELETE => $this->formatMessage(
+                '%s deletion',
+                $activity->getObjectType()
+            ),
+            BackOfficeActivityType::ACTIVATE => $this->getStatusMessage($activity, true),
+            BackOfficeActivityType::DEACTIVATE => $this->getStatusMessage($activity, false),
+            BackOfficeActivityType::DUPLICATE => $this->getDuplicateMessage($activity),
         };
+    }
 
-        if (null === $message) {
+    private function getStatusMessage(BackOfficeActivity $activity, bool $activated): ?string
+    {
+        if (null === $activity->getObjectId()) {
             return null;
         }
 
+        return $this->formatMessage(
+            $activated ? '%s activated: %d' : '%s deactivated: %d',
+            $activity->getObjectType(),
+            $activity->getObjectId()
+        );
+    }
+
+    private function getDuplicateMessage(BackOfficeActivity $activity): ?string
+    {
+        if (null === $activity->getObjectId() || null === $activity->getNewObjectId()) {
+            return null;
+        }
+
+        return $this->formatMessage(
+            '%s duplicated: (from %d to %d).',
+            $activity->getObjectType(),
+            $activity->getObjectId(),
+            $activity->getNewObjectId()
+        );
+    }
+
+    private function formatMessage(string $message, mixed ...$values): string
+    {
         return sprintf(
             $this->translator->trans(
                 $message,
                 [],
                 'Admin.Advparameters.Feature'
             ),
-            $activity->getObjectType()
+            ...$values
         );
     }
 }
