@@ -1321,6 +1321,13 @@ class ProductController extends PrestaShopAdminController
                 $productId,
                 $shopConstraint
             ));
+            $this->logBackOfficeActivity(new BackOfficeActivity(
+                BackOfficeActivityType::DUPLICATE,
+                'Product',
+                $productId,
+                0,
+                $newProductId->getValue()
+            ));
             $this->addFlash(
                 'success',
                 $this->trans('Successful duplication', [], 'Admin.Notifications.Success')

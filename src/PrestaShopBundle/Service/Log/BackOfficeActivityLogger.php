@@ -54,11 +54,28 @@ final class BackOfficeActivityLogger implements BackOfficeActivityLoggerInterfac
 
     private function getMessage(BackOfficeActivity $activity): ?string
     {// TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - BackOfficeActivityLogger::getMessage() - DA VERIFICARE
+        if (BackOfficeActivityType::DUPLICATE === $activity->getType()) {
+            if (null === $activity->getObjectId() || null === $activity->getNewObjectId()) {
+                return null;
+            }
+
+            return sprintf(
+                $this->translator->trans(
+                    '%s duplicated: (from %d to %d).',
+                    [],
+                    'Admin.Advparameters.Feature'
+                ),
+                $activity->getObjectType(),
+                $activity->getObjectId(),
+                $activity->getNewObjectId()
+            );
+        }
+
         $message = match ($activity->getType()) {
             BackOfficeActivityType::CREATE => '%s addition',
             BackOfficeActivityType::UPDATE => '%s modification',
             BackOfficeActivityType::DELETE => '%s deletion',
-            BackOfficeActivityType::DUPLICATE => null,
+            default => null,
         };
 
         if (null === $message) {
