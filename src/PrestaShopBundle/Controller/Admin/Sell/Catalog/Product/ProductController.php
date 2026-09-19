@@ -1474,6 +1474,7 @@ class ProductController extends PrestaShopAdminController
             $command = new UpdateProductCommand($productId, $shopConstraint);
             $command->setActive($isEnabled);
             $this->dispatchCommand($command);
+            $this->logProductStatusActivity($productId, $isEnabled);
             $this->addFlash('success', $this->trans('The status has been successfully updated.', [], 'Admin.Notifications.Success'));
         } catch (Exception $e) {
             $this->addFlash('error', $this->getErrorMessageForException($e, $this->getErrorMessages()));
@@ -1491,10 +1492,13 @@ class ProductController extends PrestaShopAdminController
             $this->getLanguageContext()->getId()
         ));
 
+        $newStatus = !$productForEditing->isActive();
+
         try {
             $command = new UpdateProductCommand($productId, $shopConstraint);
-            $command->setActive(!$productForEditing->isActive());
+            $command->setActive($newStatus);
             $this->dispatchCommand($command);
+            $this->logProductStatusActivity($productId, $newStatus);
         } catch (Exception $e) {
             return $this->json([
                 'status' => false,
@@ -1519,16 +1523,24 @@ class ProductController extends PrestaShopAdminController
      */
     private function bulkUpdateProductStatus(Request $request, bool $newStatus, ShopConstraint $shopConstraint): JsonResponse
     {
+        $productIds = $this->getBulkActionIds($request, self::BULK_PRODUCT_IDS_KEY);
+
         try {
             $this->dispatchCommand(
                 new BulkUpdateProductStatusCommand(
-                    $this->getBulkActionIds($request, self::BULK_PRODUCT_IDS_KEY),
+                    $productIds,
                     $newStatus,
                     $shopConstraint
                 )
             );
+            $this->logBulkProductStatusActivities($productIds, $newStatus);
         } catch (Exception $e) {
             if ($e instanceof BulkProductException) {
+                $this->logBulkProductStatusActivities(array_diff(
+                    $productIds,
+                    array_keys($e->getBulkExceptions())
+                ), $newStatus);
+
                 return $this->jsonBulkErrors($e);
             } else {
                 return $this->json(['error' => $this->getErrorMessageForException($e, $this->getErrorMessages())], Response::HTTP_BAD_REQUEST);
@@ -1536,6 +1548,36 @@ class ProductController extends PrestaShopAdminController
         }
 
         return $this->json(['success' => true]);
+    }
+
+    private function logProductStatusActivity(int $productId, bool $isEnabled, bool $bulk = false): void
+    {
+        $this->logBackOfficeActivity(new BackOfficeActivity(
+            $isEnabled ? BackOfficeActivityType::ACTIVATE : BackOfficeActivityType::DEACTIVATE,
+            'Product',
+            $productId,
+            $productId,
+            bulk: $bulk
+        ));
+    }
+
+    /**
+     * @param int[] $productIds
+     */
+    private function logBulkProductStatusActivities(array $productIds, bool $isEnabled): void
+    {
+        $activities = [];
+        foreach ($productIds as $productId) {
+            $activities[] = new BackOfficeActivity(
+                $isEnabled ? BackOfficeActivityType::ACTIVATE : BackOfficeActivityType::DEACTIVATE,
+                'Product',
+                $productId,
+                $productId,
+                bulk: true
+            );
+        }
+
+        $this->logBulkActivities($activities);
     }
 
     /**

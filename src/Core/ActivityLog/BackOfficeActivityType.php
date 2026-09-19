@@ -14,4 +14,6 @@ enum BackOfficeActivityType: string
     case UPDATE = 'update';
     case DELETE = 'delete';
     case DUPLICATE = 'duplicate';
+    case ACTIVATE = 'activate';
+    case DEACTIVATE = 'deactivate';
 }

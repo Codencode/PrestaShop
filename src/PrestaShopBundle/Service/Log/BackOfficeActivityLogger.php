@@ -71,6 +71,29 @@ final class BackOfficeActivityLogger implements BackOfficeActivityLoggerInterfac
             );
         }
 
+        if (
+            BackOfficeActivityType::ACTIVATE === $activity->getType()
+            || BackOfficeActivityType::DEACTIVATE === $activity->getType()
+        ) {
+            if (null === $activity->getObjectId()) {
+                return null;
+            }
+
+            $message = BackOfficeActivityType::ACTIVATE === $activity->getType()
+                ? '%s activated: %d'
+                : '%s deactivated: %d';
+
+            return sprintf(
+                $this->translator->trans(
+                    $message,
+                    [],
+                    'Admin.Advparameters.Feature'
+                ),
+                $activity->getObjectType(),
+                $activity->getObjectId()
+            );
+        }
+
         $message = match ($activity->getType()) {
             BackOfficeActivityType::CREATE => '%s addition',
             BackOfficeActivityType::UPDATE => '%s modification',
