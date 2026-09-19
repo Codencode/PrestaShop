@@ -1288,14 +1288,20 @@ class ProductController extends PrestaShopAdminController
     private function bulkDuplicateByShopConstraint(Request $request, ShopConstraint $shopConstraint): JsonResponse
     {
         try {
-            $this->dispatchCommand(
+            /** @var array<int, ProductId> $duplicatedProductIds */
+            $duplicatedProductIds = $this->dispatchCommand(
                 new BulkDuplicateProductCommand(
                     $this->getBulkActionIds($request, self::BULK_PRODUCT_IDS_KEY),
                     $shopConstraint
                 )
             );
+            $this->logBulkDuplicateActivities($duplicatedProductIds);
         } catch (Exception $e) {
             if ($e instanceof BulkProductException) {
+                /** @var array<int, ProductId> $successfulResults */
+                $successfulResults = $e->getSuccessfulResults();
+                $this->logBulkDuplicateActivities($successfulResults);
+
                 return $this->jsonBulkErrors($e);
             } else {
                 return $this->json(['error' => $this->getErrorMessageForException($e, $this->getErrorMessages())], Response::HTTP_BAD_REQUEST);
@@ -1381,17 +1387,47 @@ class ProductController extends PrestaShopAdminController
      */
     private function logBulkDeleteActivities(array $productIds): void
     {
+        $activities = [];
         foreach ($productIds as $productId) {
-            // TODO <cnc> ########## BACK OFFICE ACTIVITY LOGGING ########## - ProductController::logBulkDeleteActivities() - DA VERIFICARE
-            //TODO <cnc-notice> //////////////////////////////////////// SONO ARRIVATO QUI ////////////////////////////////
-            // implementare duplicazione e duplicazione bulk
-            $this->logBackOfficeActivity(new BackOfficeActivity(
+            $activities[] = new BackOfficeActivity(
                 BackOfficeActivityType::DELETE,
                 'Product',
                 $productId,
                 $productId,
                 bulk: true
-            ));
+            );
+        }
+
+        $this->logBulkActivities($activities);
+    }
+
+    /**
+     * @param array<int, ProductId> $duplicatedProductIds
+     */
+    private function logBulkDuplicateActivities(array $duplicatedProductIds): void
+    {
+        $activities = [];
+        foreach ($duplicatedProductIds as $sourceProductId => $newProductId) {
+            $activities[] = new BackOfficeActivity(
+                BackOfficeActivityType::DUPLICATE,
+                'Product',
+                $sourceProductId,
+                0,
+                $newProductId->getValue(),
+                bulk: true
+            );
+        }
+
+        $this->logBulkActivities($activities);
+    }
+
+    /**
+     * @param BackOfficeActivity[] $activities
+     */
+    private function logBulkActivities(array $activities): void
+    {
+        foreach ($activities as $activity) {
+            $this->logBackOfficeActivity($activity);
         }
     }
 
