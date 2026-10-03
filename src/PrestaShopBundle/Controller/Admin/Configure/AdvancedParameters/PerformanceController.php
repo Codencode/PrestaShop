@@ -7,6 +7,7 @@
 namespace PrestaShopBundle\Controller\Admin\Configure\AdvancedParameters;
 
 use Exception;
+use PrestaShop\PrestaShop\Adapter\Cache\Clearer\CacheClearBenchmark;
 use PrestaShop\PrestaShop\Adapter\Cache\MemcacheServerManager;
 use PrestaShop\PrestaShop\Adapter\Module\Repository\ModuleRepository;
 use PrestaShop\PrestaShop\Core\Cache\Clearer\CacheClearerInterface;
@@ -271,9 +272,14 @@ class PerformanceController extends PrestaShopAdminController
         #[Autowire(service: 'prestashop.core.cache.clearer.cache_clearer_chain')]
         CacheClearerInterface $cacheClearer
     ): RedirectResponse {
+        global $kernel;
+        CacheClearBenchmark::start($kernel->getProjectDir());
+
         $cacheClearer->clear();
         $this->addFlash('success', $this->trans('All caches cleared successfully', [], 'Admin.Advparameters.Notification'));
+        $response = $this->redirectToRoute('admin_performance');
+        CacheClearBenchmark::syncCompleted();
 
-        return $this->redirectToRoute('admin_performance');
+        return $response;
     }
 }

@@ -7,6 +7,7 @@
 namespace PrestaShop\PrestaShop\Adapter\Cache\Clearer\Symfony;
 
 use AppKernel;
+use PrestaShop\PrestaShop\Adapter\Cache\Clearer\CacheClearBenchmark;
 use PrestaShop\PrestaShop\Adapter\Cache\Clearer\SafeLoggerTrait;
 use PrestaShopBundle\Console\PrestaShopApplication;
 use Psr\Log\LoggerInterface;
@@ -109,7 +110,13 @@ class ApplicationKernelCacheClearer implements KernelCacheClearerInterface
         $application->setAutoExit(false);
 
         $output = new BufferedOutput();
-        $result = $application->doRun($input, $output);
+        $commandName = (string) $input->getFirstArgument();
+        $commandStartedAt = CacheClearBenchmark::commandStarted($commandName, $kernel->getAppId(), $kernel->getEnvironment(), $kernel->isDebug());
+        try {
+            $result = $application->doRun($input, $output);
+        } finally {
+            CacheClearBenchmark::commandCompleted($commandStartedAt, $commandName, $kernel->getAppId(), $kernel->getEnvironment(), $kernel->isDebug());
+        }
         if ($result !== 0) {
             $this->logError(sprintf($errorMessage, $kernel->getAppId(), $kernel->getEnvironment(), $kernel->isDebug() ? 'on' : 'off', $result, $output->fetch()));
 
