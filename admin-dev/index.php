@@ -10,6 +10,9 @@ use Symfony\Component\ErrorHandler\Debug;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 
+$_SERVER['prestashop_container_benchmark_request_started_at'] = hrtime(true);
+$_SERVER['prestashop_container_benchmark_request_started_at_iso'] = date('c');
+
 if (!defined('_PS_ADMIN_DIR_')) {
     define('_PS_ADMIN_DIR_', __DIR__);
 }
@@ -72,3 +75,7 @@ Request::setTrustedProxies([], Request::HEADER_X_FORWARDED_FOR | Request::HEADER
 $response = $kernel->handle($request, HttpKernelInterface::MAIN_REQUEST, true);
 $response->send();
 $kernel->terminate($request, $response);
+
+if (class_exists(PrestaShop\PrestaShop\Adapter\Cache\Clearer\ContainerBenchmark::class, false)) {
+    PrestaShop\PrestaShop\Adapter\Cache\Clearer\ContainerBenchmark::requestCompleted();
+}

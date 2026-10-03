@@ -6,6 +6,8 @@
 
 namespace PrestaShopBundle\DependencyInjection;
 
+use PrestaShop\PrestaShop\Adapter\Cache\Clearer\ContainerBenchmark;
+use PrestaShop\PrestaShop\Adapter\Cache\Clearer\ContainerBenchmarkYamlFileLoader;
 use PrestaShop\PrestaShop\Adapter\Configuration;
 use PrestaShop\PrestaShop\Core\ConfigurationInterface;
 use PrestaShop\PrestaShop\Core\Http\CookieOptions;
@@ -30,7 +32,10 @@ class PrestaShopExtension extends Extension implements PrependExtensionInterface
      */
     public function load(array $configs, ContainerBuilder $container)
     {
-        $loader = new YamlFileLoader($container, new FileLocator(dirname(__DIR__) . '/Resources/config'));
+        $fileLocator = new FileLocator(dirname(__DIR__) . '/Resources/config');
+        $loader = ContainerBenchmark::isRunning()
+            ? new ContainerBenchmarkYamlFileLoader($container, $fileLocator)
+            : new YamlFileLoader($container, $fileLocator);
         $env = $container->getParameter('kernel.environment');
         $loader->load('services_' . $env . '.yml');
 
