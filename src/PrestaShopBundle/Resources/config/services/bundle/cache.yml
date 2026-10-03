@@ -22,6 +22,11 @@ services:
     tags:
       - { name: kernel.cache_warmer }
 
+  PrestaShop\PrestaShop\Adapter\Cache\Clearer\CacheRebuildWarmer:
+    decorates: cache_warmer
+    arguments:
+      - '@PrestaShop\PrestaShop\Adapter\Cache\Clearer\CacheRebuildWarmer.inner'
+
   PrestaShopBundle\Cache\LegacyCacheClearer:
     autowire: true
     autoconfigure: true

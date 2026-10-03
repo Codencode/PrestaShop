@@ -22,7 +22,7 @@ final class CacheClearBenchmark
     public static function start(string $projectDir): void
     {
         self::$runStartedAt = hrtime(true);
-        self::$logFile = $projectDir . DIRECTORY_SEPARATOR . '_log_cache_clear.log';
+        self::$logFile = $projectDir . DIRECTORY_SEPARATOR . '_log' . DIRECTORY_SEPARATOR . '_log_cache_clear.log';
 
         self::log('=== Cache clear run started at ' . date('c') . ' ===');
         self::log('clearCacheAction started');

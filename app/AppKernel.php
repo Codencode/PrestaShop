@@ -6,6 +6,8 @@
 
 use PrestaShop\PrestaShop\Adapter\Module\Repository\CachedModuleRepository;
 use PrestaShop\PrestaShop\Adapter\Module\Repository\ModuleRepository;
+use PrestaShop\PrestaShop\Adapter\Cache\Clearer\CacheRebuildBenchmark;
+use PrestaShop\PrestaShop\Adapter\Cache\Clearer\CacheRebuildCompilerPass;
 use PrestaShop\PrestaShop\Adapter\SymfonyContainer;
 use PrestaShop\PrestaShop\Core\Exception\CoreException;
 use PrestaShop\PrestaShop\Core\Version;
@@ -15,6 +17,7 @@ use Symfony\Component\Cache\Adapter\NullAdapter;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\Config\Resource\FileExistenceResource;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\HttpKernel\Kernel;
 
 abstract class AppKernel extends Kernel
@@ -77,6 +80,7 @@ abstract class AppKernel extends Kernel
     public function boot()
     {
         parent::boot();
+        CacheRebuildBenchmark::completed();
         $this->cleanKernelReferences();
     }
 
@@ -275,6 +279,20 @@ abstract class AppKernel extends Kernel
                 'prestashop.legacy_cache_dir' => _PS_CACHE_DIR_,
             ],
         );
+    }
+
+    protected function getContainerBuilder(): ContainerBuilder
+    {
+        $container = parent::getContainerBuilder();
+        if ($this->getAppId() !== AdminKernel::APP_ID) {
+            return $container;
+        }
+
+        CacheRebuildBenchmark::start($this->getProjectDir(), $this->getEnvironment());
+        $container->addCompilerPass(new CacheRebuildCompilerPass(true), PassConfig::TYPE_BEFORE_OPTIMIZATION, PHP_INT_MAX);
+        $container->addCompilerPass(new CacheRebuildCompilerPass(false), PassConfig::TYPE_AFTER_REMOVING, PHP_INT_MIN);
+
+        return $container;
     }
 
     /**
