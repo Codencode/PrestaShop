@@ -4,6 +4,7 @@
  * docs/licenses/LICENSE.txt file that was distributed with this source code.
  */
 
+use PrestaShop\PrestaShop\Adapter\Cache\Clearer\ContainerBenchmarkContainerBuilder;
 use PrestaShop\PrestaShop\Adapter\Module\Repository\CachedModuleRepository;
 use PrestaShop\PrestaShop\Adapter\Module\Repository\ModuleRepository;
 use PrestaShop\PrestaShop\Adapter\SymfonyContainer;
@@ -15,6 +16,9 @@ use Symfony\Component\Cache\Adapter\NullAdapter;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\Config\Resource\FileExistenceResource;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
+use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\HttpKernel\Kernel;
 
 abstract class AppKernel extends Kernel
@@ -275,6 +279,25 @@ abstract class AppKernel extends Kernel
                 'prestashop.legacy_cache_dir' => _PS_CACHE_DIR_,
             ],
         );
+    }
+
+    protected function getContainerBuilder(): ContainerBuilder
+    {
+        if ($this->getAppId() !== AdminKernel::APP_ID) {
+            return parent::getContainerBuilder();
+        }
+
+        $container = new ContainerBenchmarkContainerBuilder($this->getProjectDir());
+        $container->getParameterBag()->add($this->getKernelParameters());
+
+        if ($this instanceof ExtensionInterface) {
+            $container->registerExtension($this);
+        }
+        if ($this instanceof CompilerPassInterface) {
+            $container->addCompilerPass($this, PassConfig::TYPE_BEFORE_OPTIMIZATION, -10000);
+        }
+
+        return $container;
     }
 
     /**

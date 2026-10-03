@@ -6,6 +6,7 @@
 
 namespace PrestaShopBundle\DependencyInjection\Compiler;
 
+use PrestaShop\PrestaShop\Adapter\Cache\Clearer\ContainerBenchmark;
 use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -29,27 +30,35 @@ class ModuleControllerRegisterPass implements CompilerPassInterface
      */
     public function process(ContainerBuilder $container): void
     {
-        $installedModules = $container->getParameter('prestashop.installed_modules');
-        $moduleDir = $container->getParameter('prestashop.module_dir');
+        ContainerBenchmark::moduleControllerRegisterPassStarted();
+        try {
+            $installedModules = $container->getParameter('prestashop.installed_modules');
+            $moduleDir = $container->getParameter('prestashop.module_dir');
 
-        foreach ($installedModules as $moduleName) {
-            $fileIterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($moduleDir . $moduleName));
-            $phpFiles = new RegexIterator($fileIterator, '/\.php$/');
+            foreach ($installedModules as $moduleName) {
+                ContainerBenchmark::moduleProcessed();
+                $fileIterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($moduleDir . $moduleName));
+                $phpFiles = new RegexIterator($fileIterator, '/\.php$/');
 
-            foreach ($phpFiles as $file) {
-                $className = $this->getFrameworkAdminControllerClassNameFromFile($file->getRealPath());
+                foreach ($phpFiles as $file) {
+                    ContainerBenchmark::phpFileScanned();
+                    $className = $this->getFrameworkAdminControllerClassNameFromFile($file->getRealPath());
 
-                if ($className !== null) {
-                    $reflector = new ReflectionClass($className);
+                    if ($className !== null) {
+                        $reflector = new ReflectionClass($className);
 
-                    if ($reflector->isSubclassOf(FrameworkBundleAdminController::class)) {
-                        $definition = $this->getServiceDefinition($container, $className);
-                        $definition->addTag('controller.service_arguments');
-                        $definition->setAutoconfigured(true);
-                        $definition->setAutowired(true);
+                        if ($reflector->isSubclassOf(FrameworkBundleAdminController::class)) {
+                            ContainerBenchmark::controllerFound();
+                            $definition = $this->getServiceDefinition($container, $className);
+                            $definition->addTag('controller.service_arguments');
+                            $definition->setAutoconfigured(true);
+                            $definition->setAutowired(true);
+                        }
                     }
                 }
             }
+        } finally {
+            ContainerBenchmark::moduleControllerRegisterPassCompleted();
         }
     }
 
