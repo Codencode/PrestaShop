@@ -392,10 +392,6 @@ class ImageRetriever
 
         // Resolve the formats generated for image thumbnails.
         $configuredImageFormats = ServiceLocator::get(ImageFormatConfiguration::class)->getGenerationFormats();
-        $firstImageFormat = reset($configuredImageFormats);
-        if (!is_string($firstImageFormat)) {
-            throw new PrestaShopException('No valid image format is configured.');
-        }
 
         // Share source information across fallback images only for this retrieval
         $sourceImageSizes = [];
@@ -437,32 +433,12 @@ class ImageRetriever
 
             // Get all image sizes for product objects
             foreach ($imageTypes as $imageType) {
-                // Check or generate the first configured thumbnail and get its path and dimensions
-                $thumbnail = $this->checkOrGenerateImageType(
-                    $originalImagePath,
-                    rtrim($object['dir'], DIRECTORY_SEPARATOR),
-                    $language->getIsoCode() . '-default',
-                    $imageType,
-                    $firstImageFormat,
-                    $sourceImageSizes
-                );
-
-                $sources = [
-                    $firstImageFormat => $this->link->getImageLink(
-                        '',
-                        $language->iso_code . '-default',
-                        $imageType['name'],
-                        $firstImageFormat
-                    ),
-                ];
+                $sources = [];
+                $thumbnails = [];
 
                 foreach ($configuredImageFormats as $imageFormat) {
-                    if ($imageFormat === $firstImageFormat) {
-                        continue;
-                    }
-
                     // Check or generate the thumbnail and get its path and dimensions
-                    $this->checkOrGenerateImageType(
+                    $thumbnails[$imageFormat] = $this->checkOrGenerateImageType(
                         $originalImagePath,
                         rtrim($object['dir'], DIRECTORY_SEPARATOR),
                         $language->getIsoCode() . '-default',
@@ -478,6 +454,11 @@ class ImageRetriever
                         $imageType['name'],
                         $imageFormat
                     );
+                }
+
+                $thumbnail = reset($thumbnails);
+                if (!is_array($thumbnail)) {
+                    throw new PrestaShopException('No valid image format is configured.');
                 }
 
                 // Let's resolve the base image URL we will use
